@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['webos-v*']
+  pull_request:
+
+jobs:
+  webos-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install webOS CLI
+        run: npm install -g @webos-tools/cli
+
+      - name: Validate appinfo.json
+        run: |
+          node -e "
+          const info = require('./webos/appinfo.json');
+          const required = ['id','version','type','main','title','icon','largeIcon'];
+          const missing = required.filter(k => !info[k]);
+          if (missing.length) { console.error('Missing:', missing); process.exit(1); }
+          if (!/^\d+\.\d+\.\d+$/.test(info.version)) { console.error('version must be semver X.Y.Z'); process.exit(1); }
+          if (!info.id.includes('.')) { console.error('id must be FQDN-like'); process.exit(1); }
+          console.log('appinfo OK:', info.id, info.version);
+          "
+
+      - name: Lint receiver (no hardcoded credentials)
+        run: |
+          # LG QA scans for these variable-name patterns in JS
+          if grep -rniE '(passwd|password|pwd|token|credential|secret)\s*[:=]' webos/index.html; then
+            echo "::error::Hardcoded credential pattern found — LG QA rejects this"
+            exit 1
+          fi
+          echo "No credential patterns found"
+
+      - name: Package .ipk
+        run: |
+          cd webos
+          ares-package --no-minify --no-app-sign .
+          IPK=$(ls *.ipk)
+          echo "IPK_FILE=$IPK" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IPK_FILE }}
+          path: webos/*.ipk
+
+      - name: Attach to release (tags only)
+        if: startsWith(github.ref, 'refs/tags/webos-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: webos/*.ipk
