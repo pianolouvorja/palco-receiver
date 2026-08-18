@@ -108,6 +108,12 @@
 function dlog(){/* noop */}
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
+// webOS: ares-launch -p '{"host":"..."}' chega em PalmSystem.launchParams,
+// NÃO na query string. Merge dos dois (query string tem prioridade).
+try{
+  const lp=JSON.parse((window.PalmSystem&&PalmSystem.launchParams)||'{}');
+  for(const k in lp)if(lp[k]!=null&&!qs.has(k))qs.set(k,String(lp[k]));
+}catch(e){}
 // Status de conexão é diagnóstico, não UI de projeção.
 if(qs.get('debug')==='1') document.body.classList.add('debug');
 const host=qs.get('host')||location.hostname||'192.168.1.192';
