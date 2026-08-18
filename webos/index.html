@@ -105,7 +105,7 @@
 <div id="status">conectando…</div>
 <audio id="audio" preload="auto"></audio>
 <script>
-function dlog(){/* noop */}
+function dlog(m1,m2,m3){try{console.log('[P]',m1,m2!==undefined?String(m2):'',m3!==undefined?String(m3):'')}catch(e){}}
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 // webOS: ares-launch -p '{"host":"..."}' chega em PalmSystem.launchParams,
@@ -143,16 +143,18 @@ let port=qs.get('port')||'7081';
 
 function probeSender(ip){
   return new Promise(res=>{
-    const ctl=new AbortController();
-    const t=setTimeout(()=>{ctl.abort();res(null)},900);
-    fetch('http://'+ip+':7080/status',{signal:ctl.signal})
-      .then(r=>r.json())
-      .then(j=>{clearTimeout(t);res(j&&('unlocked' in j)?ip:null)})
-      .catch(()=>{clearTimeout(t);res(null)});
+    var done=false;
+    var t=setTimeout(function(){if(!done){done=true;res(null)}},900);
+    fetch('http://'+ip+':7080/status')
+      .then(function(r){return r.json()})
+      .then(function(j){if(!done){done=true;clearTimeout(t);
+        res(j&&('unlocked' in j)?ip:null)}})
+      .catch(function(){if(!done){done=true;clearTimeout(t);res(null)}});
   });
 }
 
 async function scanSubnet(){
+  dlog('scan iniciado');
   // presume /24 da própria TV (rede típica de igreja)
   const me=location.hostname||'192.168.1.100';
   const prefix=me.split('.').slice(0,3).join('.');
@@ -164,6 +166,7 @@ async function scanSubnet(){
   const CONC=20;
   for(let i=0;i<ips.length;i+=CONC){
     const batch=await Promise.all(ips.slice(i,i+CONC).map(probeSender));
+    dlog('batch',i,'-',i+CONC,':',batch.filter(Boolean).join(',')||'-');
     for(const r of batch)if(r&&found.indexOf(r)<0)found.push(r);
     if(found.length)return found[0];
   }
@@ -171,6 +174,7 @@ async function scanSubnet(){
 }
 
 function connect(){
+  dlog('connect() host="'+host+'"');
   if(!host){
     setStatus('procurando LouvorJA na rede…');
     scanSubnet().then(found=>{
@@ -182,6 +186,7 @@ function connect(){
   doConnect();
 }
 function doConnect(){
+  dlog('doConnect '+host+':'+port);
   setStatus('conectando '+host+':'+port+'…');
   try{ws=new WebSocket('ws://'+host+':'+port+'/palco')}catch(e){retry();return}
   ws.onopen=()=>{tries=0;dlog('WS OPEN '+host);setStatus('● '+host);
