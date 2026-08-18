@@ -34,7 +34,9 @@
   #bars{margin:4vh auto 0 auto}
   #bars div{width:5vh;height:1.2vh;display:inline-block;margin:0 .5vh}
   #idle p{font-size:2.5vh;opacity:.6;margin:3vh 0 0 0}
-  #status{display:none}
+  /* Diagnóstico só via ?debug=1; nunca poluir o telão em produção. */
+  #status{display:none;position:fixed;top:2vh;right:2vw;font-size:2vh;opacity:.65;z-index:20}
+  body.debug #status{display:block}
   #status.err{color:#ff6766}
           #np{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     text-align:center;width:80vw}
@@ -106,7 +108,9 @@
 function dlog(){/* noop */}
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
-const host=qs.get('host')||'192.168.1.192';
+// Status de conexão é diagnóstico, não UI de projeção.
+if(qs.get('debug')==='1') document.body.classList.add('debug');
+const host=qs.get('host')||location.hostname||'192.168.1.192';
 const port=qs.get('port')||'7081';
 const url=`ws://${host}:${port}/palco`;
 let ws,tries=0;
