@@ -42,7 +42,6 @@ class ReceiverPage extends StatefulWidget {
 
 class _ReceiverPageState extends State<ReceiverPage> {
   late final WebViewController _controller;
-  BonsoirService? _nsdService;
 
   @override
   void initState() {
@@ -67,7 +66,6 @@ class _ReceiverPageState extends State<ReceiverPage> {
       final broadcast = BonsoirBroadcast(service: service);
       await broadcast.initialize();
       await broadcast.start();
-      _nsdService = service;
       debugPrint('[NSD] anunciando ${service.name}._palco._tcp');
     } catch (e) {
       debugPrint('[NSD] falhou (não bloqueia o receiver): $e');
@@ -77,17 +75,10 @@ class _ReceiverPageState extends State<ReceiverPage> {
   Future<String> _deviceName() async {
     try {
       final host = Platform.localHostname;
-      final model = Platform.operatingSystemVersion;
       return 'Palco ${host.isEmpty ? 'AndroidTV' : host.split('.').first}';
     } catch (_) {
       return 'Palco AndroidTV';
     }
-  }
-
-  @override
-  void dispose() {
-    _nsdService = null; // broadcast encerrado pelo Bonsoir no unmount
-    super.dispose();
   }
 
   @override
