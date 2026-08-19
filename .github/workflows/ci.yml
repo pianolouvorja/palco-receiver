@@ -144,3 +144,49 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: androidtv/build/app/outputs/flutter-apk/PalcoLouvorJA-AndroidTV-*.apk
+
+  tizen-package:
+    name: Tizen WGT
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Paridade receiver (webos vs tizen)
+        run: |
+          if ! diff -q webos/index.html tizen/index.html; then
+            echo "::error::receiver divergente webos/ vs tizen/ — sincronize"
+            exit 1
+          fi
+
+      - name: Valida config.xml
+        run: |
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          t = ET.parse('tizen/config.xml')
+          r = t.getroot()
+          assert r.tag.endswith('widget'), 'root widget'
+          ns = '{http://tizen.org/ns/widgets}'
+          app = r.find(f'{ns}application')
+          assert app is not None and app.get('id') == 'com.piano.louvorja.palco'
+          print('config.xml OK:', app.get('id'))
+          "
+
+      - name: Empacota wgt
+        run: |
+          VERSION=$(python3 -c "import xml.etree.ElementTree as ET; print(ET.parse('tizen/config.xml').getroot().get('version'))")
+          cd tizen
+          zip -qr "../com.piano.louvorja.palco_${VERSION}.wgt" index.html config.xml logo-piano-louvorja.png logo-louvor-ja.svg bg-fallback.png
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: palco-tizen-wgt
+          path: com.piano.louvorja.palco_*.wgt
+
+      - name: Attach to release (tags)
+        if: startsWith(github.ref, 'refs/tags/tizen-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: com.piano.louvorja.palco_*.wgt
