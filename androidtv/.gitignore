@@ -1,0 +1,18 @@
+# Flutter
+build/
+.dart_tool/
+.packages
+.flutter-plugins*
+.pub-cache/
+.pub/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+
+# IDE
+.idea/
+*.iml
+.vscode/

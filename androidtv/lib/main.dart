@@ -1,0 +1,99 @@
+import 'dart:io';
+
+import 'package:bonsoir/bonsoir.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+/// Palco LouvorJA — Android TV receiver.
+///
+/// WebView fullscreen com o receiver.html (mesmo arquivo do IPK webOS).
+/// NSD anuncia _palco._tcp pra o sender mobile achar a TV por mDNS.
+/// D-pad do controle vira KeyboardEvent na WebView (receiver já trata).
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  runApp(const PalcoTvApp());
+}
+
+class PalcoTvApp extends StatelessWidget {
+  const PalcoTvApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Palco LouvorJA',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0A0E1A),
+      ),
+      home: const ReceiverPage(),
+    );
+  }
+}
+
+class ReceiverPage extends StatefulWidget {
+  const ReceiverPage({super.key});
+
+  @override
+  State<ReceiverPage> createState() => _ReceiverPageState();
+}
+
+class _ReceiverPageState extends State<ReceiverPage> {
+  late final WebViewController _controller;
+  BonsoirService? _nsdService;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadFile('assets/palco/receiver.html');
+    _registerNsd();
+  }
+
+  /// Anuncia _palco._tcp — só pra o sender ACHAR a TV (o WS conecta no
+  /// sentido TV→celular; porta anunciada é dummy).
+  Future<void> _registerNsd() async {
+    try {
+      final name = await _deviceName();
+      final service = BonsoirService(
+        name: name,
+        type: '_palco._tcp',
+        port: 80, // dummy — descoberta only
+        attributes: const {'role': 'receiver', 'app': 'louvorja-palco'},
+      );
+      final broadcast = BonsoirBroadcast(service: service);
+      await broadcast.initialize();
+      await broadcast.start();
+      _nsdService = service;
+      debugPrint('[NSD] anunciando ${service.name}._palco._tcp');
+    } catch (e) {
+      debugPrint('[NSD] falhou (não bloqueia o receiver): $e');
+    }
+  }
+
+  Future<String> _deviceName() async {
+    try {
+      final host = Platform.localHostname;
+      final model = Platform.operatingSystemVersion;
+      return 'Palco ${host.isEmpty ? 'AndroidTV' : host.split('.').first}';
+    } catch (_) {
+      return 'Palco AndroidTV';
+    }
+  }
+
+  @override
+  void dispose() {
+    _nsdService = null; // broadcast encerrado pelo Bonsoir no unmount
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: WebViewWidget(controller: _controller),
+    );
+  }
+}
