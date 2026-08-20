@@ -95,9 +95,10 @@ jobs:
           path: webos/*.ipk
 
       - name: Attach to release (tags)
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/webos-v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: webos/*.ipk
 
   androidtv-package:
@@ -140,9 +141,10 @@ jobs:
           path: androidtv/build/app/outputs/flutter-apk/PalcoLouvorJA-AndroidTV-*.apk
 
       - name: Attach to release (tags)
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/androidtv-v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: androidtv/build/app/outputs/flutter-apk/PalcoLouvorJA-AndroidTV-*.apk
 
   tizen-package:
