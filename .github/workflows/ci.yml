@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches: [main]
-    tags: ['v*', 'webos-v*', 'androidtv-v*']
+    tags: ['v*', 'webos-v*', 'androidtv-v*', 'tizen-v*']
   pull_request:
 
 permissions:
