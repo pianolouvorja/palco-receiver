@@ -68,7 +68,7 @@
     font-variant-numeric:tabular-nums;text-shadow:0 2px 12px rgba(0,0,0,.8)}
   #timer small{display:block;font-size:2.8vh;font-weight:300;opacity:.7;margin-top:2vh}
   #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:contain;
-    background:#000;z-index:5}
+    background:transparent;z-index:5}
 </style>
 </head>
 <body>
@@ -256,6 +256,14 @@ function retry(){
 function showIdle(msg){
   $('idleMsg').textContent=msg;
   $('idle').classList.remove('hidden');
+  // Encerramento de item (música/vídeo/timer de QUALQUER origem): idle é a
+  // autoridade de limpeza — esconde todos os camadas de conteúdo pra nunca
+  // ficarem sobrepostos ao idle (bug: hino/video encerrado ficava em cima).
+  hideNp();
+  const _v=$('video'); if(_v.style.display!=='none'){_v.pause();_v.removeAttribute('src');_v.style.display='none';_v.load();}
+  const _t=$('timer'); if(_t.style.display!=='none'){clearInterval(_t._iv||0);_t.style.display='none';}
+  const _a=$('audio'); if(!_a.paused){try{_a.pause();_a.currentTime=0;}catch(e){}}
+  $('text').style.display='';
   // volta pro BG do palco (personalizado) — música "saiu de cena"
   $('bg').removeAttribute('src');
   $('text').textContent='';$('footer').textContent='';
@@ -494,6 +502,8 @@ function handle(m){
       if(m.action==='stop'){v.pause();v.removeAttribute('src');v.style.display='none';
         v.load();sendEvent({v:2,type:'ended',media:'video'});break}
       if(m.url){v.src=proxyUrl(m.url);v.style.display='';
+        // BG atrás do vídeo (letterbox de vídeo vertical mostra o palco, não preto)
+        $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
         v.onended=()=>{v.style.display='none';v.removeAttribute('src');
           sendEvent({v:2,type:'ended',media:'video'})}}
       if(m.action==='play'){
@@ -505,6 +515,8 @@ function handle(m){
       break}
     case 'timer':{
       hideIdle();
+      // BG padrão pro timer: bgPalco personalizado ou fallback — nunca body puro.
+      $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
       const t=$('timer');
       if(m.action==='stop'){t.style.display='none';clearInterval(t._iv||0);$('text').style.display='';break}
       t.style.display='';$('text').style.display='none';
