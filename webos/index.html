@@ -19,6 +19,17 @@
   #text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     text-align:center;width:84vw;font-size:6.5vh;font-weight:600;line-height:1.35;
     text-shadow:0 2px 12px rgba(0,0,0,.8)}
+  /* Alinhamento horizontal: desativa centralização forçada do transform */
+  #text[style*="text-align: left"],#text[style*="text-align:left"]{
+    left:8vw;transform:translate(0,-50%)}
+  #text[style*="text-align: right"],#text[style*="text-align:right"]{
+    left:auto;right:8vw;transform:translate(0,-50%)}
+  /* Alinhamento vertical — classes aplicadas no #content */
+  #content.valign-top{display:flex;align-items:flex-start;justify-content:center}
+  #content.valign-bottom{display:flex;align-items:flex-end;justify-content:center}
+  #content.valign-middle #text{top:50%}
+  #content.valign-top #text,#content.valign-bottom #text{position:relative;
+    top:auto;left:auto;right:auto;transform:none;margin:0 auto}
   /* F3.3m: estilos dinâmicos da letra (sombra/caixinha) */
   #text.shadow-on{text-shadow:var(--ts,0 3px 18px rgba(0,0,0,.8))}
   #text.box-on{background:rgba(0,0,0,var(--box-bg,.45));
@@ -180,13 +191,15 @@ function sendEvent(m){try{if(ws&&ws.readyState===1)ws.send(JSON.stringify(m))}ca
 // Prioridade: launchParams/query host > último host válido (localStorage)
 // > scan da sub-rede via GET :7080/status (resposta JSON identifica sender).
 let host=qs.get('host')||localStorage.getItem('palcoHost')||location.hostname||'';
-let port=qs.get('port')||'7081';
+let port=qs.get('port')||localStorage.getItem('palcoPort')||'7081';
+// Porta HTTP derivada da WS: slot 1 = 7081/7080, slot 2 = 7083/7082...
+function httpPortFor(wsPort){return String(parseInt(wsPort,10)-1)}
 
 function probeSender(ip){
   return new Promise(res=>{
     var done=false;
     var t=setTimeout(function(){if(!done){done=true;res(null)}},450);
-    fetch('http://'+ip+':7080/status')
+    fetch('http://'+ip+':'+httpPortFor(port)+'/status')
       .then(function(r){return r.json()})
       .then(function(j){if(!done){done=true;clearTimeout(t);
         res(j&&('unlocked' in j)?ip:null)}})
@@ -240,7 +253,7 @@ function doConnect(){
   try{ws=new WebSocket('ws://'+host+':'+port+'/palco')}catch(e){retry();return}
   ws.onopen=()=>{tries=0;dlog('WS OPEN '+host);setStatus('● '+host);
     if(window.__hideSplash)window.__hideSplash(); // F3.3j: splash sai no connect
-    localStorage.setItem('palcoHost',host)};
+    localStorage.setItem('palcoHost',host);localStorage.setItem('palcoPort',port)};
   ws.onmessage=ev=>{try{handle(JSON.parse(ev.data))}catch(e){}};
   ws.onclose=()=>{dlog('WS CLOSE');showIdle();
     // host falhou 3x → esquece e re-escaneia (IP mudou)
@@ -392,7 +405,13 @@ function closeIpEntry(){if(ipEntry){ipEntry.remove();ipEntry=null}}
 function submitIp(){
   var v=(ipEntry&&ipEntry._val)||'';
   if(!v)return;
-  host=v;localStorage.setItem('palcoHost',host);tries=0;
+  // Multi-palco: aceita IP ou IP:PORTA (ex: 192.168.1.50:7083).
+  var parts=v.split(':');
+  host=parts[0];localStorage.setItem('palcoHost',host);
+  if(parts[1]&&parseInt(parts[1],10)>0){
+    port=String(parseInt(parts[1],10));localStorage.setItem('palcoPort',port);
+  }
+  tries=0;
   closeIpEntry();
   try{if(ws)ws.close()}catch(e){}
   connect();
@@ -405,11 +424,16 @@ window.addEventListener('keydown',function(e){
     else if(k===461||k===8||k===463){                      // backspace
       ipEntry._val=ipEntry._val.slice(0,-1);renderIp()}
     else if(k>=48&&k<=57){                                  // 0-9
-      if(ipEntry._val.length<15){ipEntry._val+=String(k-48);renderIp()}}
+      if(ipEntry._val.length<21){ipEntry._val+=String(k-48);renderIp()}}
     else if(k>=96&&k<=105){                                 // numpad
-      if(ipEntry._val.length<15){ipEntry._val+=String(k-96);renderIp()}}
+      if(ipEntry._val.length<21){ipEntry._val+=String(k-96);renderIp()}}
     else if(k===46||k===190||k===110){                      // ponto
-      if(ipEntry._val.length<15){ipEntry._val+='.';renderIp()}}
+      if(ipEntry._val.length<21){ipEntry._val+='.';renderIp()}}
+    else if(k===186||k===59){                               // dois-pontos (IP:PORTA)
+      if(ipEntry._val.length<21){ipEntry._val+=':';renderIp()}}
+    else if(e.key==='.'||e.key===':'||e.key===';'){          // fallback layout-proof (Electron/Chromium): usa o caractere real
+      var ch=e.key===';'?':':e.key;                          // tecla ; com shift em ABNT = :
+      if(ipEntry._val.length<21){ipEntry._val+=ch;renderIp()}}
     else if(k===403||k===27){closeIpEntry()}                // vermelha/ESC
     return;
   }
@@ -426,6 +450,9 @@ function handle(m){
     case 'projection':
       hideIdle();
       hideNp();
+      // Item novo manda limpar o que tava: pausa audio/video anteriores.
+      {const a=$('audio');a.pause();
+       const v=$('video');if(v.src){v.pause();v.style.display='none';v.removeAttribute('src');v.load()}}
       {const t=$('timer'); if(t.style.display!=='none'){clearInterval(t._iv||0);
         t.style.display='none';$('text').style.display='';}}
       if(m.background){$('bg').src=proxyUrl(m.background)}
@@ -450,6 +477,14 @@ function handle(m){
           t.style.setProperty('--box-border',
             m.boxBorder?`${m.boxBorder.width||0.4}vh solid ${m.boxBorder.color||'rgba(255,255,255,.25)'}`:'none')}
         else{t.classList.add('box-off')}
+        // Alinhamento do texto: left|center|right + top|middle|bottom
+        const root=$('content')||t.parentElement;
+        t.style.textAlign=m.textAlign||'center';
+        if(root){
+          root.classList.remove('valign-top','valign-middle','valign-bottom');
+          const va=m.textVerticalAlign||'middle';
+          root.classList.add('valign-'+(va==='top'||va==='bottom'?va:'middle'));
+        }
       }
       // F3.3m: footer com referência destacada + versão
       {const f=$('footer');
@@ -494,7 +529,10 @@ function handle(m){
         playWithFallback();
       }
       if(m.action==='pause')a.pause();
-      if(m.action==='stop'){a.pause();a.currentTime=0;showIdle('Aguardando conteúdo…')}
+      if(m.action==='stop'){a.pause();a.currentTime=0;
+        // Multi-palco: stop do app (minimizar now-playing) NÃO limpa a tela —
+        // o now-playing fica (idle só via msg 'idle' ou fim da faixa).
+        }
       if(m.action==='seek')a.currentTime=m.position||0;
       break}
     case 'video':{
@@ -502,6 +540,7 @@ function handle(m){
       if(m.action==='stop'){v.pause();v.removeAttribute('src');v.style.display='none';
         v.load();sendEvent({v:2,type:'ended',media:'video'});break}
       if(m.url){v.src=proxyUrl(m.url);v.style.display='';
+        hideIdle();hideNp();$('text').style.display='none'; // video NA FRENTE do idle desde o load
         // BG atrás do vídeo (letterbox de vídeo vertical mostra o palco, não preto)
         $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
         v.onended=()=>{v.style.display='none';v.removeAttribute('src');
@@ -511,7 +550,10 @@ function handle(m){
         v.play().then(()=>sendEvent({v:2,type:'unlocked'}))
                 .catch(e=>dlog('VID PLAY FAIL: '+e.name));
       }
-      if(m.action==='pause')v.pause();
+      if(m.action==='pause'){
+        // Toggle: sender não sabe o estado real — a TV decide.
+        if(v.paused)v.play().catch(function(){});else v.pause();
+      }
       break}
     case 'timer':{
       hideIdle();
@@ -519,6 +561,18 @@ function handle(m){
       $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
       const t=$('timer');
       if(m.action==='stop'){t.style.display='none';clearInterval(t._iv||0);$('text').style.display='';break}
+      // Timer tem elemento próprio: aplica o mesmo conjunto de settings
+      // do módulo Timer, recebido do sender; antes era sempre branco/centro.
+      if(m.color)t.style.color=m.color;
+      if(typeof m.fontSize==='number')t.style.fontSize=(m.fontSize/10.8)+'vh';
+      if(typeof m.fontWeight==='number')t.style.fontWeight=m.fontWeight;
+      t.style.textAlign=m.textAlign||'center';
+      const va=m.textVerticalAlign||'middle';
+      t.style.top=va==='top'?'16%':va==='bottom'?'84%':'50%';
+      t.style.transform='translate(-50%,-50%)';
+      if(m.textShadow===false)t.style.textShadow='none';
+      else if(typeof m.shadowBlur==='number')
+        t.style.textShadow=`0 ${Math.max(1,m.shadowBlur/3)}vh ${m.shadowBlur}vh rgba(0,0,0,${m.shadowIntensity!=null?m.shadowIntensity:0.8})`;
       t.style.display='';$('text').style.display='none';
       let rem=(m.duration||0)*1000; // countdown segundos
       const mode=m.mode||'countdown';
