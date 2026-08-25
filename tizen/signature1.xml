@@ -2,40 +2,10 @@
 <SignedInfo>
 <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"></CanonicalizationMethod>
 <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"></SignatureMethod>
-<Reference URI=".buildResult%2Fbg-fallback.png">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>2AQxQ0cccLJ+cnLujF5O3VSeLHUqx3PAwbOHicaAzTySe4pDyo68mXu519M/Z3lRyKXdM/IkYwRu
-zWwV3zCpRA==</DigestValue>
-</Reference>
-<Reference URI=".buildResult%2Fconfig.xml">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>IAfc6vaE5jhemjBookoIr6Mp1KBGeyvXcBJYx50aByYc2LzxsSLtqq1c3xz/W0bOM8RQQfx8iruH
-ZyIoOvLKgQ==</DigestValue>
-</Reference>
-<Reference URI=".buildResult%2Findex.html">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>64cvQ62RZJgQK5rKBDRjpspEMFICXhBOAZS679IkiuRrMb7rNmStuSBaTPThayaXgCn1CJcc4mol
-oYwj/lRkBA==</DigestValue>
-</Reference>
-<Reference URI=".buildResult%2Flogo-louvor-ja.svg">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>6vASKQm/6ho6Pbl/AjXA1zeS8j7sQDx91vNXjo6dOOIuJoKP73xja2jBq+Sy/38OM/oLFuy4x3Yy
-Lixf5CKR0w==</DigestValue>
-</Reference>
-<Reference URI=".buildResult%2Flogo-piano-louvorja.png">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>QK7ayuTPVlATKWH0XeAd2LLARlJPMLGiYlHV4GhyfrnLd5bwsupIzG8mQM66uGnNXNv8yDp89yEy
-bDOSBXolxQ==</DigestValue>
-</Reference>
-<Reference URI=".buildResult%2Fsplash.jpg">
-<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>P2G254cgRUHd3mojSDPjGDdlQyyGBTo/g0j/6+peh8S7tJMGOEID1pleAyVuo3rCKE9LTQuknqis
-ZjZapibgZw==</DigestValue>
-</Reference>
 <Reference URI="author-signature.xml">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>a4S53AO9usdKRtyXHME0H1WmgIk6uT5zj7fwKKAjdPNGuHBcenk9L24zE9LBZUfNuISkeN1SfuaN
-t3XJYWZmyw==</DigestValue>
+<DigestValue>9+x9mad20Txbecj5gtHsRv3YvjNh+oJDceK8va1WqqfbAT4fxXuNZxgC53/gtQjxw/qsQMgtiwDI
+N3MZOm504Q==</DigestValue>
 </Reference>
 <Reference URI="bg-fallback.png">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
@@ -54,8 +24,8 @@ u2Ecu8cCIw==</DigestValue>
 </Reference>
 <Reference URI="index.html">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>83KmcFjTwVwlLamU63uK7vJWs1OswzUer0Ec8icp5aUeh13R4US0gw2BmmGzWj3fxS4C3MQV9cxO
-/G1Tagn9Jw==</DigestValue>
+<DigestValue>WjC6hS/v8RdU19bMAX8ypvdkd+QRvn7UL0is8PrvIlr8SAAg2iKD07+OL9jfFniD1FT5lVuZv/X9
+8Km4diApBg==</DigestValue>
 </Reference>
 <Reference URI="logo-louvor-ja.svg">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
@@ -82,9 +52,9 @@ GyvKX9Snig==</DigestValue>
 </Reference>
 </SignedInfo>
 <SignatureValue>
-pqTjYu9rOFTpLjq3P20XC+yHtHwjwH2wFyEu4XZx4yNuPx1EWohDejDjxS8hRiZtScJvGMzxN86C
-sXRGfSf+4s9be4wstYssb8Cz46nUJx4evC2o6V6Nv3Ly44DC8wlp5UdYU0TWF+Ephf59Qs9HSKWO
-jAYV2jGMlDoy6VbjpZU=
+aq4349mjWd4BXz/Pje2L+jJppLYYYfS6QueseatSg+AGOmV0rZKzTWVY6rNkrlv46+wWyTV/ZL1o
+aafOzRmhVvOVahZV8JCMXgbdzdi0CZlPX/rcEep8z72iYIcxwfV3iZZLLftA0t4kcXRTsvL+SpNN
+/Bnifn+bkB/W2dIo1JA=
 </SignatureValue>
 <KeyInfo>
 <X509Data>
