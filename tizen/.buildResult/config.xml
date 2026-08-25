@@ -1,0 +1,32 @@
+<?xml version="1.0.1" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="http://pianolouvorja.com.br/palco"
+        version="0.1.0"
+        viewmodes="fullscreen"
+        width="1920" height="1080">
+
+  <tizen:application id="com.piano.louvorja.palco"
+                      package="compianolouvorja"
+                      required_version="4.0"
+                      launch_mode="single"/>
+
+  <content src="index.html"/>
+  <feature name="http://tizen.org/feature/internet"/>
+  <feature name="http://tizen.org/feature/network.wifi"/>
+
+  <access origin="*" subdomains="true"/>
+  <tizen:allow-navigation>*</tizen:allow-navigation>
+
+  <!-- teclas de mídia e navegação chegam no keydown (RF-003) -->
+  <tizen:setting background-support="enable"
+                 screen-orientation="landscape"
+                 context-menu="disable"
+                 key="handleKeys"
+                 hwkey="execute"/>
+
+  <name>Palco Piano LouvorJA</name>
+  <description>Palco (receiver) — projeção do app PIANO LouvorJA na TV</description>
+  <author href="https://pianolouvorja.com.br" email="app@pianolouvorja.com.br">Piano LouvorJA</author>
+  <icon src="logo-piano-louvorja.png"/>
+</widget>

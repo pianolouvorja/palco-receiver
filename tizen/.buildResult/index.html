@@ -68,15 +68,16 @@
     font-variant-numeric:tabular-nums;text-shadow:0 2px 12px rgba(0,0,0,.8)}
   #timer small{display:block;font-size:2.8vh;font-weight:300;opacity:.7;margin-top:2vh}
   #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:contain;
-    background:#000;z-index:5}
+    background:transparent;z-index:5}
 </style>
 </head>
 <body>
 <!-- F3.3j: splash screen — some no WS OPEN ou 2.5s -->
 <div id="splash" style="position:fixed;inset:0;z-index:200;background:#0A0E1A;
   display:flex;align-items:center;justify-content:center;transition:opacity .6s">
-  <!-- Splash com arte oficial (JPG) — substitui SVG inline quebrado -->
-  <img src="splash-palco.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0A0E1A">
+  <img src="splash.jpg" alt="Palco Piano LouvorJA" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+</div>
+</div>
 <script>
 (function(){
   var s=document.getElementById('splash');
@@ -143,7 +144,7 @@ function dlog(m1,m2,m3){try{console.log('[P]',m1,m2!==undefined?String(m2):'',m3
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 // F3.3q: versão no idle (canto inferior direito) — ?v= override ou padrão.
-(function(){var el=$('idleVer');if(!el)return;var qv=qs.get('v');if(qv){el.textContent='PIANO LouvorJA Palco · receiver v'+qv;return}fetch('appinfo.json').then(function(r){return r.json()}).then(function(j){el.textContent='PIANO LouvorJA Palco · receiver v'+(j.version||'?')}).catch(function(){fetch('config.xml').then(function(r){return r.text()}).then(function(t){var m2=t.match(/version="([^"]+)"/);el.textContent='PIANO LouvorJA Palco · receiver v'+(m2?m2[1]:'?')}).catch(function(){el.textContent='PIANO LouvorJA Palco'})})})()
+try{$('idleVer').textContent='PIANO LouvorJA Palco · receiver v'+(qs.get('v')||'0.1.14')}catch(e){}
 // webOS: ares-launch -p '{"host":"..."}' chega em PalmSystem.launchParams,
 // NÃO na query string. Merge dos dois (query string tem prioridade).
 try{
@@ -224,27 +225,13 @@ function connect(){
     return;
   }
   // F3.3v: valida o host ANTES do WS — se o sender não responde em /status,
-    // o IP é stale (DHCP) → esquece e escaneia JÁ, sem as 3 tentativas de WS
-    // com backoff (que levavam ~15s antes de re-escanear).
-    // Exceção: fetch bloqueado (app empacotado webOS) não significa host morto —
-    // tenta WS direto 1x antes de descartar; WS não sofre CORS.
-    probeSender(host).then(ok=>{
-      if(ok)doConnect();
-      else{
-        dlog('probe falhou — tentando WS direto antes de descartar host');
-        directTry();
-      }
-    });
-  }
-  // Tenta WS direto no host salvo; se falhar 1x sem nunca abrir, host é stale.
-  function directTry(){
-    var opened=false;
-    var t=setTimeout(function(){if(!opened){dlog('WS direto falhou — host stale');localStorage.removeItem('palcoHost');host='';connect()}},3000);
-    try{var w=new WebSocket('ws://'+host+':'+port+'/palco');
-      w.onopen=function(){opened=true;clearTimeout(t);try{w.close()}catch(e){};doConnect()};
-      w.onerror=function(){};
-    }catch(e){clearTimeout(t);localStorage.removeItem('palcoHost');host='';connect()}
-  }
+  // o IP é stale (DHCP) → esquece e escaneia JÁ, sem as 3 tentativas de WS
+  // com backoff (que levavam ~15s antes de re-escanear).
+  probeSender(host).then(ok=>{
+    if(ok)doConnect();
+    else{dlog('host stale, re-escaneando');localStorage.removeItem('palcoHost');host='';connect()}
+  });
+}
 // F3.3u: re-scan contínuo enquanto desconectado — nunca desiste.
 // (antes: 3 falhas → esquecia host → 1 scan → parava com "não encontrado")
 function doConnect(){
@@ -269,6 +256,14 @@ function retry(){
 function showIdle(msg){
   $('idleMsg').textContent=msg;
   $('idle').classList.remove('hidden');
+  // Encerramento de item (música/vídeo/timer de QUALQUER origem): idle é a
+  // autoridade de limpeza — esconde todos os camadas de conteúdo pra nunca
+  // ficarem sobrepostos ao idle (bug: hino/video encerrado ficava em cima).
+  hideNp();
+  const _v=$('video'); if(_v.style.display!=='none'){_v.pause();_v.removeAttribute('src');_v.style.display='none';_v.load();}
+  const _t=$('timer'); if(_t.style.display!=='none'){clearInterval(_t._iv||0);_t.style.display='none';}
+  const _a=$('audio'); if(!_a.paused){try{_a.pause();_a.currentTime=0;}catch(e){}}
+  $('text').style.display='';
   // volta pro BG do palco (personalizado) — música "saiu de cena"
   $('bg').removeAttribute('src');
   $('text').textContent='';$('footer').textContent='';
@@ -400,9 +395,7 @@ function submitIp(){
   host=v;localStorage.setItem('palcoHost',host);tries=0;
   closeIpEntry();
   try{if(ws)ws.close()}catch(e){}
-  // IP manual conecta WS DIRETO — sem probeSender (fetch /status pode ser
-  // bloqueado em app empacotado webOS; WS não sofre CORS).
-  doConnect();
+  connect();
 }
 window.addEventListener('keydown',function(e){
   var k=e.keyCode;
@@ -509,6 +502,8 @@ function handle(m){
       if(m.action==='stop'){v.pause();v.removeAttribute('src');v.style.display='none';
         v.load();sendEvent({v:2,type:'ended',media:'video'});break}
       if(m.url){v.src=proxyUrl(m.url);v.style.display='';
+        // BG atrás do vídeo (letterbox de vídeo vertical mostra o palco, não preto)
+        $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
         v.onended=()=>{v.style.display='none';v.removeAttribute('src');
           sendEvent({v:2,type:'ended',media:'video'})}}
       if(m.action==='play'){
@@ -520,6 +515,8 @@ function handle(m){
       break}
     case 'timer':{
       hideIdle();
+      // BG padrão pro timer: bgPalco personalizado ou fallback — nunca body puro.
+      $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
       const t=$('timer');
       if(m.action==='stop'){t.style.display='none';clearInterval(t._iv||0);$('text').style.display='';break}
       t.style.display='';$('text').style.display='none';
