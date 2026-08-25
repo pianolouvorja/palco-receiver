@@ -19,8 +19,8 @@ u2Ecu8cCIw==</DigestValue>
 </Reference>
 <Reference URI="index.html">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
-<DigestValue>WjC6hS/v8RdU19bMAX8ypvdkd+QRvn7UL0is8PrvIlr8SAAg2iKD07+OL9jfFniD1FT5lVuZv/X9
-8Km4diApBg==</DigestValue>
+<DigestValue>8xQJ2g33IHQfs0jFiaqlYdKCJVDpBG1wo4uoy4rTx6tWmrnlEEpDB1fwVRd7NNuZlUpY/jUVfUqc
+Wm8tNgw3LQ==</DigestValue>
 </Reference>
 <Reference URI="logo-louvor-ja.svg">
 <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"></DigestMethod>
@@ -47,9 +47,9 @@ QY10fG1EWQ==</DigestValue>
 </Reference>
 </SignedInfo>
 <SignatureValue>
-I0ssEsZSJ6WneKCHujjCviyvkut8B0Kz3nq+8wXYsk3AgvkP3sUwEGIQ6c+njY77vEh2u5fN+JXO
-SFDeaQbiQCLC+Fc2cOxWu4kJpe0A/sifr0NJxZ4r4IpUOvjwjhRMXBaGzUyCBfuIItgeYpf+HtE8
-dhHNE0q6MezU05oM0IM=
+Bq5uH2a4llzFgFoH1+pbbhOTQI3052ywJNj/oHpDpgObikO9tDxQJGDNEk3s+aMe5a+E7XnCuPA/
+VT8GQsZiWENiG5KMVETru5NPrUrzJh/hajhIb/g81VCyHhzIX1tTUtwChqot4/ReRO8YxHwBSprD
+fErsVSazui+tuvtO9F8=
 </SignatureValue>
 <KeyInfo>
 <X509Data>
