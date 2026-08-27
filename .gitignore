@@ -1,3 +1,11 @@
 *.ipk
+*.wgt
 node_modules/
 .DS_Store
+
+# Tizen CLI generated
+tizen/.buildResult/
+
+# Interno (não publicar por enquanto)
+.cursor/
+docs/
