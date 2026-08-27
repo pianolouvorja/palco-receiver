@@ -16,27 +16,35 @@
   #veil{position:fixed;inset:0;background:rgba(0,0,0,.45)}
   #content{position:fixed;top:0;left:0;right:0;bottom:0;padding:6vh 8vw;
     box-sizing:border-box}
-  #text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    text-align:center;width:84vw;font-size:6.5vh;font-weight:600;line-height:1.35;
+  #text{position:absolute;top:50%;left:0;right:0;
+    /* Caixa encolhe até o texto como via cabo. display:table = shrink-to-fit
+       compatível com Chromium antigo (webOS/Tizen) — fit-content em
+       position:absolute colapsava no simulador (26/08). margin auto centra. */
+    display:table;margin:0 auto;max-width:86vw;max-height:72vh;
+    overflow-wrap:break-word;
+    transform:translateY(-50%);
+    text-align:center;font-size:6.5vh;font-weight:700;line-height:1.35;
+    letter-spacing:.03em;text-transform:uppercase;
     text-shadow:0 2px 12px rgba(0,0,0,.8)}
-  /* Alinhamento horizontal: desativa centralização forçada do transform */
-  #text[style*="text-align: left"],#text[style*="text-align:left"]{
-    left:8vw;transform:translate(0,-50%)}
-  #text[style*="text-align: right"],#text[style*="text-align:right"]{
-    left:auto;right:8vw;transform:translate(0,-50%)}
-  /* Alinhamento vertical — classes aplicadas no #content */
-  #content.valign-top{display:flex;align-items:flex-start;justify-content:center}
-  #content.valign-bottom{display:flex;align-items:flex-end;justify-content:center}
-  #content.valign-middle #text{top:50%}
-  #content.valign-top #text,#content.valign-bottom #text{position:relative;
-    top:auto;left:auto;right:auto;transform:none;margin:0 auto}
   /* F3.3m: estilos dinâmicos da letra (sombra/caixinha) */
   #text.shadow-on{text-shadow:var(--ts,0 3px 18px rgba(0,0,0,.8))}
+  /* Caixinha no PADRÃO da projeção (StagePreview): canto folha
+     1.4cqw 0 1.4cqw 0 (16:9 → ~2.7vh 0), borda fina 1px, padding
+     justo ao texto (2cqw ≈ 3.8vh lateral, 2vh vertical). */
   #text.box-on{background:rgba(0,0,0,var(--box-bg,.45));
-    padding:4vh 5vw;border-radius:2vh;
-    border:var(--box-border,.4vh solid rgba(255,255,255,.25))}
+    /* Player: radius folha clamp(14px,2.4vmin,32px) 0, borda 0.2vmin e
+       sombra suave. Padding mínimo — caixa abraça o texto (vmin). */
+    padding:1.6vmin 1.8vmin;
+    border-radius:clamp(14px,2.4vmin,32px) 0 clamp(14px,2.4vmin,32px) 0;
+    border:var(--box-border,clamp(2px,.2vmin,4px) solid rgba(255,255,255,.25));
+    box-shadow:0 10px 30px rgba(0,0,0,.4)}
   #text.shadow-off{text-shadow:none}
-  #text.box-off{background:none;padding:0;border:none}
+  /* Capa da música (isCover): título destaque amarelo, sem caixinha/borda —
+     paridade com media-projection__title--cover via cabo. */
+  #text.cover-on{text-transform:uppercase;font-weight:900;letter-spacing:.03em;
+    color:#f6c32a;background:none;padding:0;border:none;box-shadow:none;
+    border-radius:0;line-height:1.1}
+  #text.box-off{background:none;padding:0;border:none;box-shadow:none}
 
   #footer{position:fixed;bottom:4vh;left:0;right:0;text-align:center;
     font-size:2.6vh;font-weight:300;opacity:.7}
@@ -78,8 +86,9 @@
     text-align:center;width:84vw;font-size:16vh;font-weight:700;
     font-variant-numeric:tabular-nums;text-shadow:0 2px 12px rgba(0,0,0,.8)}
   #timer small{display:block;font-size:2.8vh;font-weight:300;opacity:.7;margin-top:2vh}
+  /* Vídeo acima do idle (z=20) — idle nunca pode cobrir reprodução. */
   #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:contain;
-    background:transparent;z-index:5}
+    background:#000;z-index:20}
 </style>
 </head>
 <body>
@@ -87,7 +96,6 @@
 <div id="splash" style="position:fixed;inset:0;z-index:200;background:#0A0E1A;
   display:flex;align-items:center;justify-content:center;transition:opacity .6s">
   <img src="splash.jpg" alt="Palco Piano LouvorJA" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
-</div>
 </div>
 <script>
 (function(){
@@ -152,10 +160,18 @@
 <audio id="audio" preload="auto"></audio>
 <script>
 function dlog(m1,m2,m3){try{console.log('[P]',m1,m2!==undefined?String(m2):'',m3!==undefined?String(m3):'')}catch(e){}}
+// window.onerror → visível no DevTools e reportado ao sender (debug remoto)
+window.onerror=function(msg,src,line,col){
+  try{sendEvent({v:2,type:'error',code:'receiver_js',message:String(msg).slice(0,200),line:line,col:col})}catch(e){}
+  return false;
+};
+window.addEventListener('unhandledrejection',function(ev){
+  try{sendEvent({v:2,type:'error',code:'receiver_promise',message:String(ev.reason&&ev.reason.message||ev.reason).slice(0,200)})}catch(e){}
+});
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 // F3.3q: versão no idle (canto inferior direito) — ?v= override ou padrão.
-try{$('idleVer').textContent='PIANO LouvorJA Palco · receiver v'+(qs.get('v')||'0.1.14')}catch(e){}
+(function(){var el=$('idleVer');if(!el)return;var qv=qs.get('v')||window.__PALCO_APPV__||'0.1.42';if(qv){el.textContent='PIANO LouvorJA Palco · receiver v'+qv;return}fetch('appinfo.json').then(function(r){return r.json()}).then(function(j){el.textContent='PIANO LouvorJA Palco · receiver v'+(j.version||'?')}).catch(function(){fetch('config.xml').then(function(r){return r.text()}).then(function(t){var m2=t.match(/version="([^"]+)"/);el.textContent='PIANO LouvorJA Palco · receiver v'+(m2?m2[1]:'?')}).catch(function(){el.textContent='PIANO LouvorJA Palco'})})})()
 // webOS: ares-launch -p '{"host":"..."}' chega em PalmSystem.launchParams,
 // NÃO na query string. Merge dos dois (query string tem prioridade).
 try{
@@ -170,7 +186,10 @@ let bgPalco='';  // BG personalizado do palco (idle) — persiste entre músicas
 
 function proxyUrl(original){
   if(!original)return original;
-  if(original.startsWith('http://'+host+':7080/'))return original; // ja local
+  // Qualquer porta do MESMO sender é local: 7080 (Principal), 7082 (TV 2),
+  // 7084... Antes só aceitava :7080; bg vindo de slot :7082 era proxyado
+  // de volta e falhava → receiver caía no bg-12 (caso real 26/08).
+  if(original.startsWith('http://'+host+':'))return original;
   if(original.startsWith('http://')||original.startsWith('https://')){
     return `http://${host}:7080/proxy?url=${encodeURIComponent(original)}`;
   }
@@ -179,8 +198,11 @@ function proxyUrl(original){
 
 function setStatus(t,err){const s=$('status');s.textContent=t;
   const c=$('idleConn');if(c){
-    if(t.indexOf('●')===0)c.textContent='conectado a '+t.slice(1).trim();
-    else c.textContent=t+' · tecla vermelha = digitar IP';
+    if(t.indexOf('●')===0){
+      var lb=localStorage.getItem('palcoSlotLabel');
+      c.textContent=(lb?lb+' · ':'')+'conectado a '+t.slice(1).trim()+' · vermelha = IP/porta · azul = atualizar';
+    }
+    else c.textContent=(localStorage.getItem('palcoSlotLabel')?localStorage.getItem('palcoSlotLabel')+' · ':'')+t+' · tecla vermelha = digitar IP';
   }
   s.className=err?'err':''}
 
@@ -192,25 +214,46 @@ function sendEvent(m){try{if(ws&&ws.readyState===1)ws.send(JSON.stringify(m))}ca
 // > scan da sub-rede via GET :7080/status (resposta JSON identifica sender).
 let host=qs.get('host')||localStorage.getItem('palcoHost')||location.hostname||'';
 let port=qs.get('port')||localStorage.getItem('palcoPort')||'7081';
-// Porta HTTP derivada da WS: slot 1 = 7081/7080, slot 2 = 7083/7082...
-function httpPortFor(wsPort){return String(parseInt(wsPort,10)-1)}
 
-function probeSender(ip){
+function probeHttp(ip,httpPort){
   return new Promise(res=>{
-    var done=false;
-    var t=setTimeout(function(){if(!done){done=true;res(null)}},450);
-    fetch('http://'+ip+':'+httpPortFor(port)+'/status')
+    fetch('http://'+ip+':'+httpPort+'/status')
       .then(function(r){return r.json()})
-      .then(function(j){if(!done){done=true;clearTimeout(t);
-        res(j&&('unlocked' in j)?ip:null)}})
-      .catch(function(){if(!done){done=true;clearTimeout(t);res(null)}});
+      .then(function(j){res(j&&('unlocked' in j)?j:null)})
+      .catch(function(){res(null)});
   });
+}
+function probeSender(ip){
+  // Porta digitada pode ser WS (7081) OU HTTP do slot (a UI mostra a HTTP,
+  // ex.: slot 1 = 7082/7083). Tenta a dupla HTTP/WS em ambos os sentidos:
+  // p como HTTP, p-1 (p=WS) e p+1 (p=HTTP→WS=p+1).
+  var p=parseInt(port,10)||7081;
+  return probeHttp(ip,p).then(function(j){
+    if(j)return normalizePort(ip,j,p+1);        // p era HTTP → WS=p+1
+    return probeHttp(ip,p-1).then(function(j2){
+      if(j2)return normalizePort(ip,j2,p);      // p era WS (HTTP=p-1)
+      return probeHttp(ip,p+1).then(function(j3){
+        if(j3)return normalizePort(ip,j3,p+1);  // p era HTTP, WS=p+1
+        return null;
+      });
+    });
+  });
+}
+function normalizePort(ip,j,wsPort){
+  port=String(wsPort);
+  return ip;
 }
 
 async function scanSubnet(){
   dlog('scan iniciado');
   // presume /24 da própria TV (rede típica de igreja)
-  const me=location.hostname||'192.168.1.100';
+  // file:// (IPK/simulador local): hostname vazio — tenta últimos hosts
+  // conhecidos da sub-rede salva antes do default. Cobertura p/ IPK.
+  let me=location.hostname;
+  if(!me){
+    const saved=localStorage.getItem('palcoHost');
+    me=saved||'192.168.1.100';
+  }
   const prefix=me.split('.').slice(0,3).join('.');
   const base=host?host.split('.').slice(0,3).join('.'):prefix;
   const ips=[];
@@ -238,24 +281,49 @@ function connect(){
     return;
   }
   // F3.3v: valida o host ANTES do WS — se o sender não responde em /status,
-  // o IP é stale (DHCP) → esquece e escaneia JÁ, sem as 3 tentativas de WS
-  // com backoff (que levavam ~15s antes de re-escanear).
-  probeSender(host).then(ok=>{
-    if(ok)doConnect();
-    else{dlog('host stale, re-escaneando');localStorage.removeItem('palcoHost');host='';connect()}
-  });
-}
+    // o IP é stale (DHCP) → esquece e escaneia JÁ, sem as 3 tentativas de WS
+    // com backoff (que levavam ~15s antes de re-escanear).
+    // Exceção: fetch bloqueado (app empacotado webOS) não significa host morto —
+    // tenta WS direto 1x antes de descartar; WS não sofre CORS.
+    probeSender(host).then(ok=>{
+      if(ok)doConnect();
+      else{
+        dlog('probe falhou — tentando WS direto antes de descartar host');
+        directTry();
+      }
+    });
+  }
+  // Tenta WS direto no host salvo; se falhar 1x sem nunca abrir, host é stale.
+  function directTry(){
+    var opened=false;
+    var t=setTimeout(function(){if(!opened){dlog('WS direto falhou — host stale');localStorage.removeItem('palcoHost');host='';connect()}},3000);
+    try{var w=new WebSocket('ws://'+host+':'+port+'/palco');
+      w.onopen=function(){opened=true;clearTimeout(t);try{w.close()}catch(e){};doConnect()};
+      w.onerror=function(){};
+    }catch(e){clearTimeout(t);localStorage.removeItem('palcoHost');host='';connect()}
+  }
 // F3.3u: re-scan contínuo enquanto desconectado — nunca desiste.
 // (antes: 3 falhas → esquecia host → 1 scan → parava com "não encontrado")
+// Watchdog: sender morreu/fechou com mídia tocando → para NA HORA.
+// Sem isso o áudio continuava até o fim depois do app cair.
+function stopMediaOnServerLoss(){
+  try{
+    const a=$('audio'); if(a&&!a.paused){a.pause();a.currentTime=0}
+    const v=$('video'); if(v&&!v.paused){v.pause();v.removeAttribute('src');v.style.display='none';v.load()}
+    hideNp();
+  }catch(e){}
+}
+
 function doConnect(){
   dlog('doConnect '+host+':'+port);
   setStatus('conectando '+host+':'+port+'…');
   try{ws=new WebSocket('ws://'+host+':'+port+'/palco')}catch(e){retry();return}
   ws.onopen=()=>{tries=0;dlog('WS OPEN '+host);setStatus('● '+host);
     if(window.__hideSplash)window.__hideSplash(); // F3.3j: splash sai no connect
-    localStorage.setItem('palcoHost',host);localStorage.setItem('palcoPort',port)};
+    localStorage.setItem('palcoHost',host);
+    localStorage.setItem('palcoPort',port)};
   ws.onmessage=ev=>{try{handle(JSON.parse(ev.data))}catch(e){}};
-  ws.onclose=()=>{dlog('WS CLOSE');showIdle();
+  ws.onclose=()=>{dlog('WS CLOSE');stopMediaOnServerLoss();showIdle();
     // host falhou 3x → esquece e re-escaneia (IP mudou)
     if(tries>=3){localStorage.removeItem('palcoHost');host='';tries=0}
     retry()};
@@ -269,20 +337,18 @@ function retry(){
 function showIdle(msg){
   $('idleMsg').textContent=msg;
   $('idle').classList.remove('hidden');
-  // Encerramento de item (música/vídeo/timer de QUALQUER origem): idle é a
-  // autoridade de limpeza — esconde todos os camadas de conteúdo pra nunca
-  // ficarem sobrepostos ao idle (bug: hino/video encerrado ficava em cima).
-  hideNp();
-  const _v=$('video'); if(_v.style.display!=='none'){_v.pause();_v.removeAttribute('src');_v.style.display='none';_v.load();}
-  const _t=$('timer'); if(_t.style.display!=='none'){clearInterval(_t._iv||0);_t.style.display='none';}
-  const _a=$('audio'); if(!_a.paused){try{_a.pause();_a.currentTime=0;}catch(e){}}
-  $('text').style.display='';
   // volta pro BG do palco (personalizado) — música "saiu de cena"
   $('bg').removeAttribute('src');
+  // Now-playing e timer precisam SAIR junto — senão o título residual
+  // do áudio e o cronômetro 00:00 sobrepõem o idle (caso real: MP3
+  // da liturgia termina após timer espelhado).
+  hideNp();
+  {const t=$('timer'); if(t.style.display!=='none'){clearInterval(t._iv||0);
+    t.style.display='none';}}
   $('text').textContent='';$('footer').textContent='';
   // F3.3ac: remove estilos de projeção (caixa/sombra) — senão a caixa
   // vazia continuava desenhada no idle após "Limpar projeção".
-  $('text').classList.remove('box-on','shadow-on','box-off','shadow-off');
+  $('text').classList.remove('box-on','shadow-on','box-off','shadow-off','cover-on');
   $('text').style.removeProperty('--box-bg');
   $('text').style.removeProperty('--box-border');
   $('text').style.removeProperty('--ts');
@@ -297,6 +363,10 @@ function coverUrl(cover){
 }
 function showNp(title,sub,cover){
   hideIdle();$('text').style.display='none';
+  // Timer espelhado antes do áudio precisa SAIR — senão o cronômetro
+  // sobrepõe o now-playing (caso real: liturgia toca MP3 após timer).
+  {const t=$('timer'); if(t.style.display!=='none'){clearInterval(t._iv||0);
+    t.style.display='none';$('text').style.display='none';}}
   const np=$('np');np.style.display='';
   $('npTitle').textContent=title;
   $('npSub').textContent=sub;
@@ -335,8 +405,25 @@ function hideMuteBadge(){const b=$('muteBadge');if(b)b.remove()}
 function unmuteNow(){
   mutedUnlock=false;hideMuteBadge();
   a0.muted=false;
+  const vv=$('video'); if(vv){vv.muted=false; if(vv.paused&&vv.src)vv.play().catch(function(){})}
   a0.play().then(()=>sendEvent({v:1,type:'unlocked'})).catch(()=>{});
   sendEvent({v:1,type:'unlocked'});
+}
+function playVideoWithFallback(){
+  const v=$('video');
+  v.muted=false;
+  v.play().then(()=>{
+    dlog('VID PLAY OK (som)');
+  }).catch(e=>{
+    dlog('VID PLAY FAIL som: '+e.name+' — retry mudo');
+    v.muted=true;
+    v.play().then(()=>{
+      dlog('VID PLAY OK mudo — aguardando gesto p/ som');
+      mutedUnlock=true;showMuteBadge();
+    }).catch(e2=>{
+      dlog('VID PLAY FAIL mudo tb: '+e2.name);
+    });
+  });
 }
 function playWithFallback(){
   a0.muted=false;
@@ -392,10 +479,10 @@ function openIpEntry(){
   ipEntry.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.85);'+
     'display:flex;align-items:center;justify-content:center';
   ipEntry.innerHTML='<div style="text-align:center">'+
-    '<p style="font-size:2.6vh;opacity:.7;margin:0 0 2vh 0">Digite o IP do celular (LouvorJA ativo) e pressione OK</p>'+
+    '<p style="font-size:2.6vh;opacity:.7;margin:0 0 2vh 0">Digite o IP — ou SÓ A PORTA (ex.: 7081) para achar o LouvorJA na rede</p>'+
     '<p id="ipVal" style="font-size:6vh;font-weight:700;letter-spacing:.5vh;margin:0;'+
     'min-height:7vh;border-bottom:.3vh solid #FCCE02;padding:0 4vh"></p>'+
-    '<p style="font-size:1.8vh;opacity:.5;margin:2vh 0 0 0">OK conectar · vermelha cancelar · tecla 463 apagar</p></div>';
+    '<p style="font-size:1.8vh;opacity:.5;margin:2vh 0 0 0">OK conectar · vermelha cancelar · backspace apaga</p></div>';
   document.body.appendChild(ipEntry);
   ipEntry._val='';
   renderIp();
@@ -405,6 +492,16 @@ function closeIpEntry(){if(ipEntry){ipEntry.remove();ipEntry=null}}
 function submitIp(){
   var v=(ipEntry&&ipEntry._val)||'';
   if(!v)return;
+  // Só dígitos (2-5) = PORTA: o sender é achado por scan com essa porta
+  // (usuário não decora IP; nova TV na rede de igreja conecta fácil).
+  if(/^\d{2,5}$/.test(v)&&!/\./.test(v)){
+    port=v;localStorage.setItem('palcoPort',port);tries=0;closeIpEntry();
+    try{if(ws)ws.close()}catch(e){}
+    host='';localStorage.removeItem('palcoHost');
+    setStatus('procurando LouvorJA na porta '+port+'…');
+    scanSubnet();
+    return;
+  }
   // Multi-palco: aceita IP ou IP:PORTA (ex: 192.168.1.50:7083).
   var parts=v.split(':');
   host=parts[0];localStorage.setItem('palcoHost',host);
@@ -414,7 +511,9 @@ function submitIp(){
   tries=0;
   closeIpEntry();
   try{if(ws)ws.close()}catch(e){}
-  connect();
+  // IP manual conecta WS DIRETO — sem probeSender (fetch /status pode ser
+  // bloqueado em app empacotado webOS; WS não sofre CORS).
+  doConnect();
 }
 window.addEventListener('keydown',function(e){
   var k=e.keyCode;
@@ -424,17 +523,31 @@ window.addEventListener('keydown',function(e){
     else if(k===461||k===8||k===463){                      // backspace
       ipEntry._val=ipEntry._val.slice(0,-1);renderIp()}
     else if(k>=48&&k<=57){                                  // 0-9
-      if(ipEntry._val.length<21){ipEntry._val+=String(k-48);renderIp()}}
+      if(ipEntry._val.length<15){ipEntry._val+=String(k-48);renderIp()}}
     else if(k>=96&&k<=105){                                 // numpad
-      if(ipEntry._val.length<21){ipEntry._val+=String(k-96);renderIp()}}
+      if(ipEntry._val.length<15){ipEntry._val+=String(k-96);renderIp()}}
     else if(k===46||k===190||k===110){                      // ponto
-      if(ipEntry._val.length<21){ipEntry._val+='.';renderIp()}}
-    else if(k===186||k===59){                               // dois-pontos (IP:PORTA)
-      if(ipEntry._val.length<21){ipEntry._val+=':';renderIp()}}
-    else if(e.key==='.'||e.key===':'||e.key===';'){          // fallback layout-proof (Electron/Chromium): usa o caractere real
-      var ch=e.key===';'?':':e.key;                          // tecla ; com shift em ABNT = :
-      if(ipEntry._val.length<21){ipEntry._val+=ch;renderIp()}}
+      if(ipEntry._val.length<15){ipEntry._val+='.';renderIp()}}
     else if(k===403||k===27){closeIpEntry()}                // vermelha/ESC
+    return;
+  }
+  // Azul (406): refresh do Palco. Útil quando sender/slot reiniciou ou
+  // replay ficou stale — força novo boot, scan e conexão WS sem alterar
+  // host/porta persistidos. Vermelho continua reservado a IP/porta manual.
+  if(k===406){
+    e.preventDefault();
+    try{if(ws)ws.close()}catch(e){}
+    location.reload();
+    return;
+  }
+  // Verde (404): para qualquer mídia local e volta ao idle. O operador da
+  // TV recupera a tela sem depender do sender (ex: mídia presa/congelada).
+  if(k===404){
+    e.preventDefault();
+    {const a=$('audio');a.pause();a.removeAttribute('src');a.load();}
+    {const v=$('video');v.pause();v.removeAttribute('src');v.style.display='none';v.load();}
+    hideNp();
+    showIdle('Aguardando conteúdo…');
     return;
   }
   // tecla vermelha (403) no idle abre entrada de IP
@@ -450,14 +563,21 @@ function handle(m){
     case 'projection':
       hideIdle();
       hideNp();
-      // Item novo manda limpar o que tava: pausa audio/video anteriores.
-      {const a=$('audio');a.pause();
-       const v=$('video');if(v.src){v.pause();v.style.display='none';v.removeAttribute('src');v.load()}}
       {const t=$('timer'); if(t.style.display!=='none'){clearInterval(t._iv||0);
         t.style.display='none';$('text').style.display='';}}
-      if(m.background){$('bg').src=proxyUrl(m.background)}
-      else{$('bg').src='bg-fallback.png'} // F3.3j: BG padrão sem imagem
+      const bgEl=$('bg');
+      bgEl.onerror=()=>{bgEl.onerror=null;bgEl.src='bg-fallback.png'};
+      if(m.background){bgEl.src=proxyUrl(m.background)}
+      // Sem bg na mensagem: usa o BG configurado no app (bgPalco — enviado
+      // ao ligar o palco). Só se NÃO houver bg configurado cai no fallback
+      // fixo. Vale pra qualquer módulo (26/08 Rafael).
+      else if(bgPalco){bgEl.src=proxyUrl(bgPalco)}
+      else{bgEl.src='bg-fallback.png'}
+      // Slide/PDF/PPT (text vazio) é mídia visual pura: sem véu de leitura,
+      // preserva a tonalidade original do canvas do operador.
+      $('veil').style.display=m.text?'':'none';
       $('text').innerHTML=m.text||'';
+      $('text').classList.toggle('cover-on',m.isCover===true);
       // F3.3o: fontSize/fontWeight dinâmicos (settings do operador).
       {const t=$('text');
         if(typeof m.fontSize==='number')
@@ -477,14 +597,6 @@ function handle(m){
           t.style.setProperty('--box-border',
             m.boxBorder?`${m.boxBorder.width||0.4}vh solid ${m.boxBorder.color||'rgba(255,255,255,.25)'}`:'none')}
         else{t.classList.add('box-off')}
-        // Alinhamento do texto: left|center|right + top|middle|bottom
-        const root=$('content')||t.parentElement;
-        t.style.textAlign=m.textAlign||'center';
-        if(root){
-          root.classList.remove('valign-top','valign-middle','valign-bottom');
-          const va=m.textVerticalAlign||'middle';
-          root.classList.add('valign-'+(va==='top'||va==='bottom'?va:'middle'));
-        }
       }
       // F3.3m: footer com referência destacada + versão
       {const f=$('footer');
@@ -508,71 +620,105 @@ function handle(m){
     case 'audio':{
       const a=$('audio');
       if(m.url){
-        a.src=proxyUrl(m.url);
-        // F3.3g: sincroniza com o player local — seek ANTES do play
-        // (metadata pode não estar carregada: aplicar no loadedmetadata).
-        if(typeof m.positionMs==='number'&&m.positionMs>0){
-          const apply=()=>{try{a.currentTime=m.positionMs/1000}catch(e){}};
-          if(a.readyState>=1)apply();else a.addEventListener('loadedmetadata',apply,{once:true});
-        }
-        // ao terminar a música, volta pro palco em espera
-        a.onended=()=>{hideNp();showIdle('Aguardando conteúdo…')};
-        // now playing (só se audio for o conteúdo principal)
-        if(m.title){
-          showNp(m.title, m.subtitle||'', m.cover||'');
-          // F3.3j: áudio sem imagem de fundo → BG padrão do palco
+        // F3.3-sync: só recarrega o src se a URL MUDOU — reenvio da mesma
+        // faixa com action:play não pode reiniciar o áudio (loop 3s).
+        const next=proxyUrl(m.url);
+        if(a.src!==next){
+          a.src=next;
+          if(typeof m.positionMs==='number'&&m.positionMs>0){
+            const apply=()=>{try{a.currentTime=m.positionMs/1000}catch(e){}};
+            if(a.readyState>=1)apply();else a.addEventListener('loadedmetadata',apply,{once:true});
+          }
+          a.onended=()=>{hideNp();showIdle('Aguardando conteúdo…')};
+          // Áudio "desconhecido" (sem metadados): now-playing padrão do
+          // Palco — sem nome de arquivo, com a animação eq indicando que
+          // há algo tocando. Mesmo visual do "só áudio" do app.
+          if(m.title){
+            showNp(m.title, m.subtitle||'', m.cover||'');
+          }else{
+            showNp('Reproduzindo áudio', m.subtitle||'', m.cover||'');
+          }
           $('bg').src=m.background?proxyUrl(m.background):'bg-fallback.png';
         }
       }
-      if(m.action==='play'){
-        dlog('PLAY tentativa src='+(a.src||'').slice(0,60));
-        playWithFallback();
+      // BG garantido em TODA mensagem de áudio (load, play, pause, seek):
+      // sem isso, mensagens action-only podiam deixar tela preta.
+      if(!m.background){
+        const cur=$('bg');
+        if(!cur.src||cur.src.endsWith('/'))cur.src='bg-fallback.png';
       }
-      if(m.action==='pause')a.pause();
-      if(m.action==='stop'){a.pause();a.currentTime=0;
-        // Multi-palco: stop do app (minimizar now-playing) NÃO limpa a tela —
-        // o now-playing fica (idle só via msg 'idle' ou fim da faixa).
+      if(m.action==='play'){
+        // Now-playing tardio APENAS se não há projeção ativa na TV.
+        // Hino da liturgia = projection (letra) + audio juntos: o np não
+        // pode cobrir a letra projetada (caso real: hino mostrava
+        // 'Reproduzindo áudio' em vez da letra).
+        const np=$('np');
+        const textEl=$('text');
+        const hasProjection=textEl&&textEl.innerHTML&&textEl.innerHTML.trim()!==''&&np.style.display==='none';
+        if(np.style.display==='none'&&!hasProjection){
+          showNp(m.title||'Reproduzindo áudio', m.subtitle||'', m.cover||'');
+          if(!m.background)$('bg').src='bg-fallback.png';
         }
-      if(m.action==='seek')a.currentTime=m.position||0;
+        if(a.paused){dlog('PLAY src='+(a.src||'').slice(0,60));playWithFallback()}
+        else dlog('PLAY ignorado — já tocando');
+      }
+      if(m.action==='pause'&&!a.paused)a.pause();
+      if(m.action==='stop'){a.pause();a.currentTime=0;showIdle('Aguardando conteúdo…')}
+      if(m.action==='seek'){
+        const target=(m.position||m.positionMs/1000||0);
+        // só corrige se o desvio for perceptível — micro-sync causa stutter
+        if(Math.abs(a.currentTime-target)>0.12){try{a.currentTime=target}catch(e){}}
+        // sender mandou seek enquanto deveria tocar (play inicial pode ter
+        // falhado por autoplay) → retoma; playWithFallback cuida do unlock
+        if(a.paused&&target>0.2)playWithFallback();
+      }
       break}
     case 'video':{
       const v=$('video');
+      hideIdle();hideNp();
+      // Vídeo assumindo a TV: qualquer ÁUDIO anterior (hino/MP3) é PARADO
+      // e limpo. Sem isso, o 'audio play' do tvBroadcast (que manda nos dois
+      // canais) retomava o hino por cima do vídeo (caso real 26/08).
+      {const a=$('audio');
+        if(a&&a.src&&!(m.action==='stop'&&!m.url)){a.pause();a.removeAttribute('src');a.load()}}
       if(m.action==='stop'){v.pause();v.removeAttribute('src');v.style.display='none';
-        v.load();sendEvent({v:2,type:'ended',media:'video'});break}
+        v.load();showIdle('Aguardando conteúdo…');
+        sendEvent({v:2,type:'ended',media:'video'});break}
       if(m.url){v.src=proxyUrl(m.url);v.style.display='';
-        hideIdle();hideNp();$('text').style.display='none'; // video NA FRENTE do idle desde o load
-        // BG atrás do vídeo (letterbox de vídeo vertical mostra o palco, não preto)
-        $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
-        v.onended=()=>{v.style.display='none';v.removeAttribute('src');
+        // Sync inicial (padrão F3.3g do áudio): positionMs aplicado antes
+        // do play — seguro p/ metadata não carregada (loadedmetadata once).
+        if(typeof m.positionMs==='number'&&m.positionMs>0){
+          const apply=()=>{try{v.currentTime=m.positionMs/1000}catch(e){}};
+          if(v.readyState>=1)apply();else v.addEventListener('loadedmetadata',apply,{once:true});
+        }
+        v.onended=()=>{v.style.display='none';v.removeAttribute('src');v.load();
+          showIdle('Aguardando conteúdo…');
           sendEvent({v:2,type:'ended',media:'video'})}}
+      if(m.action==='seek'){
+        const target=(m.position||((m.positionMs||0)/1000)||0);
+        // Spec multi-telas F4: tolerância 0.12s (era 0.3 — perceptível em
+        // lábio/voz). Drift pequeno = correção SUAVE via playbackRate
+        // (sem corte); grande (≥0.5s) = salto.
+        const drift=target-v.currentTime;
+        if(Math.abs(drift)>0.5){try{v.currentTime=target}catch(e){};v.playbackRate=1}
+        else if(drift>0.12)v.playbackRate=Math.min(1.05,1+drift*0.5);
+        else if(drift<-0.12)v.playbackRate=Math.max(0.95,1+drift*0.5);
+        else v.playbackRate=1;
+        if(v.paused&&target>0.2)playVideoWithFallback();
+      }
       if(m.action==='play'){
         const a=$('audio'); a.pause(); // exclusao mutua com audio
-        v.play().then(()=>sendEvent({v:2,type:'unlocked'}))
-                .catch(e=>dlog('VID PLAY FAIL: '+e.name));
+        // Fallback mudo (padrão F3.3h do áudio): browser bloqueia play
+        // com som sem gesto — retry mudo toca na hora, badge pede o gesto.
+        playVideoWithFallback();
+        sendEvent({v:2,type:'unlocked'});
       }
-      if(m.action==='pause'){
-        // Toggle: sender não sabe o estado real — a TV decide.
-        if(v.paused)v.play().catch(function(){});else v.pause();
-      }
+      if(m.action==='pause')v.pause();
       break}
     case 'timer':{
       hideIdle();
-      // BG padrão pro timer: bgPalco personalizado ou fallback — nunca body puro.
-      $('bg').src=bgPalco?proxyUrl(bgPalco):'bg-fallback.png';
       const t=$('timer');
       if(m.action==='stop'){t.style.display='none';clearInterval(t._iv||0);$('text').style.display='';break}
-      // Timer tem elemento próprio: aplica o mesmo conjunto de settings
-      // do módulo Timer, recebido do sender; antes era sempre branco/centro.
-      if(m.color)t.style.color=m.color;
-      if(typeof m.fontSize==='number')t.style.fontSize=(m.fontSize/10.8)+'vh';
-      if(typeof m.fontWeight==='number')t.style.fontWeight=m.fontWeight;
-      t.style.textAlign=m.textAlign||'center';
-      const va=m.textVerticalAlign||'middle';
-      t.style.top=va==='top'?'16%':va==='bottom'?'84%':'50%';
-      t.style.transform='translate(-50%,-50%)';
-      if(m.textShadow===false)t.style.textShadow='none';
-      else if(typeof m.shadowBlur==='number')
-        t.style.textShadow=`0 ${Math.max(1,m.shadowBlur/3)}vh ${m.shadowBlur}vh rgba(0,0,0,${m.shadowIntensity!=null?m.shadowIntensity:0.8})`;
       t.style.display='';$('text').style.display='none';
       let rem=(m.duration||0)*1000; // countdown segundos
       const mode=m.mode||'countdown';
@@ -591,14 +737,20 @@ function handle(m){
         if(mode!=='chrono'&&rem<=0){clearInterval(t._iv)}},1000);
       break}
     case 'idle':showIdle(m.msg||'Aguardando conteúdo…');break;
-    // F3.3x: sender informa o IP DA TV (visto pelo socket) — exibido
-    // discretamente no idle pra debug/ares.
+    // F3.3x: sender informa IP DA TV (visto pelo socket) + SLOT onde ela
+    // caiu — identificação visível pro operador conferir com o app.
     case 'youare':{
       if(m.ip){
+        var who=(m.slotLabel||m.slot||'Palco');
+        var isMain=!m.slot||m.slot==='0';
+        if(isMain)who='Principal (espelho)';
         var el=document.getElementById('idleConn');
         if(el&&document.getElementById('idle')&&!document.getElementById('idle').classList.contains('hidden'))
-          el.textContent='TV '+m.ip+' · conectado · vermelha = digitar IP';
-        try{localStorage.setItem('palcoSelfIp',m.ip)}catch(e){}
+          el.textContent=who+' · TV '+m.ip+' · conectado · vermelha = digitar IP';
+        try{
+          localStorage.setItem('palcoSelfIp',m.ip);
+          localStorage.setItem('palcoSlotLabel',who);
+        }catch(e){}
       }
       break;
     }
