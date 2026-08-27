@@ -48,7 +48,10 @@ class _ReceiverPageState extends State<ReceiverPage> {
     super.initState();
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadFile('assets/palco/receiver.html');
+      // loadFlutterAsset é o caminho correto pra assets empacotados no APK
+      // (loadFile resolve como http://assets/... → ERR_NAME_NOT_RESOLVED,
+      // bug diagnosticado no A03/Android em 2026-08-20).
+      ..loadFlutterAsset('assets/palco/receiver.html');
     _registerNsd();
   }
 

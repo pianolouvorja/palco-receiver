@@ -12,7 +12,7 @@
     <uses-feature android:name="android.hardware.gamepad" android:required="false"/>
 
     <application
-        android:label="Palco LouvorJA"
+        android:label="Palco Piano LouvorJA"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"
