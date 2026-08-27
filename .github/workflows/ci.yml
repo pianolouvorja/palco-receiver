@@ -2,7 +2,7 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     tags: ['v*', 'webos-v*', 'androidtv-v*']
   pull_request:
 
