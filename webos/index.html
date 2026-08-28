@@ -23,7 +23,7 @@
     display:table;margin:0 auto;max-width:86vw;max-height:72vh;
     overflow-wrap:break-word;
     transform:translateY(-50%);
-    text-align:center;font-size:6.5vh;font-weight:700;line-height:1.35;
+    text-align:center;font-size:3.65vw;font-weight:700;line-height:1.35;
     letter-spacing:.03em;text-transform:uppercase;
     text-shadow:0 2px 12px rgba(0,0,0,.8)}
   /* F3.3m: estilos dinâmicos da letra (sombra/caixinha) */
@@ -581,7 +581,7 @@ function handle(m){
       // F3.3o: fontSize/fontWeight dinâmicos (settings do operador).
       {const t=$('text');
         if(typeof m.fontSize==='number')
-          t.style.fontSize=(m.fontSize/10.8)+'vh'; // px@1080p -> vh
+          t.style.fontSize=(m.fontSize/10.8)+'vw'; // px@1080p -> vw (LARGURA): paridade com cqw do cabo
         if(typeof m.fontWeight==='number')
           t.style.fontWeight=m.fontWeight;
       }
