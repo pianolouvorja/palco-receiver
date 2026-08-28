@@ -54,3 +54,38 @@ IPKs e APKs publicados em
 https://github.com/pianolouvorja/palco-receiver/releases
 (repo privado: asset URL exige token — para download direto da TV use Dev
 Mode/scp, ou aguarde publicação em loja).
+
+## Runbook de release (auto-update)
+
+Fluxo da org: `feat/* → PR → staging → PR → main → tag v*`. A partir da
+tag, o canal de updates publica sozinho:
+
+1. **Merge em ordem** das PRs abertas para `staging` (review obrigatória)
+2. **Bump** em branch `chore/version-X.Y.Z` a partir de `staging`:
+   - `webos/appinfo.json` version **E** o hardcode `window.__PALCO_APPV__`
+     no `webos/index.html` (2 lugares — o CI de tag valida se bateram)
+   - `tizen/config.xml` widget version
+   - `androidtv/pubspec.yaml` `X.Y.Z+N` (sempre incrementar o `+N`)
+   - Sincronizar `webos/index.html` → `tizen/index.html` →
+     `androidtv/assets/palco/receiver.html` (CI de paridade falha se divergir)
+3. **PR `staging` → `main`**, merge com review
+4. **Tag `vX.Y.Z`** (X.Y.Z limpo, sem sufixo — o updater compara números):
+   ```bash
+   git tag v0.1.44 && git push origin v0.1.44
+   ```
+5. O workflow `publish-update.yml` dispara na tag:
+   - valida semver + sanidade (tag == appinfo == HTML)
+   - publica HTML+assets+`manifest.json` na `gh-pages` do repo público
+     [`pianolouvorja/palco-updates`](https://github.com/pianolouvorja/palco-updates)
+     (repo de artefato — **só o CI escreve**, branches protegidas)
+   - espera o GitHub Pages propagar
+6. **TVs na 0.1.43+** buscam o canal no boot (+4s) e de hora em hora; se
+   a versão remota for maior e a TV estiver no idle (sem mídia), trocam
+   sozinhas. TVs ≤0.1.42 **não têm updater** — último install manual.
+
+Canal público (serve receiver em qualquer browser, zero install):
+`https://pianolouvorja.github.io/palco-updates/manifest.json`
+
+Secrets necessários (já configurados): `PALCO_UPDATES_TOKEN` (PAT com
+escopo `repo`) no palco-receiver.
+
