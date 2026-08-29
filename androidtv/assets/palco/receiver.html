@@ -16,7 +16,7 @@
   #veil{position:fixed;inset:0;background:rgba(0,0,0,.45)}
   #content{position:fixed;top:0;left:0;right:0;bottom:0;padding:6vh 8vw;
     box-sizing:border-box}
-  #text{position:absolute;top:50%;left:0;right:0;
+  #text{position:absolute;top:50%;left:50%;
     /* Caixa encolhe até o texto como via cabo. display:table = shrink-to-fit
        compatível com Chromium antigo (webOS/Tizen) — fit-content em
        position:absolute colapsava no simulador (26/08). margin auto centra. */
@@ -172,8 +172,8 @@ window.addEventListener('unhandledrejection',function(ev){
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 // F3.3q: versão no idle (canto inferior direito) — ?v= override ou padrão.
-window.__PALCO_APPV__=window.__PALCO_APPV__||'0.1.48';
-(function(){var el=$('idleVer');if(!el)return;var qv=qs.get('v')||window.__PALCO_APPV__||'0.1.42';if(qv){el.textContent='PIANO LouvorJA Palco · receiver v'+qv;return}fetch('appinfo.json').then(function(r){return r.json()}).then(function(j){el.textContent='PIANO LouvorJA Palco · receiver v'+(j.version||'?')}).catch(function(){fetch('config.xml').then(function(r){return r.text()}).then(function(t){var m2=t.match(/version="([^"]+)"/);el.textContent='PIANO LouvorJA Palco · receiver v'+(m2?m2[1]:'?')}).catch(function(){el.textContent='PIANO LouvorJA Palco'})})})()
+window.__PALCO_APPV__=window.__PALCO_APPV__||'0.1.50';
+(function(){var el=$('idleVer');if(!el)return;var qv=qs.get('v')||window.__PALCO_APPV__||'0.1.50';if(qv){el.textContent='PIANO LouvorJA Palco · receiver v'+qv;return}fetch('appinfo.json').then(function(r){return r.json()}).then(function(j){el.textContent='PIANO LouvorJA Palco · receiver v'+(j.version||'?')}).catch(function(){fetch('config.xml').then(function(r){return r.text()}).then(function(t){var m2=t.match(/version="([^"]+)"/);el.textContent='PIANO LouvorJA Palco · receiver v'+(m2?m2[1]:'?')}).catch(function(){el.textContent='PIANO LouvorJA Palco'})})})()
 // webOS: ares-launch -p '{"host":"..."}' chega em PalmSystem.launchParams,
 // NÃO na query string. Merge dos dois (query string tem prioridade).
 try{
@@ -604,7 +604,7 @@ function handle(m){
       // F3.3o: fontSize/fontWeight dinâmicos (settings do operador).
       {const t=$('text');
         if(typeof m.fontSize==='number')
-          t.style.fontSize=(m.fontSize/10.8)+'vw'; // px@1080p -> vh
+          t.style.fontSize=(m.fontSize/10.8)+'vw'; // px@1080p -> vw (LARGURA): paridade com cqw do cabo
         if(typeof m.fontWeight==='number')
           t.style.fontWeight=m.fontWeight;
       }
