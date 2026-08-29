@@ -157,7 +157,7 @@
 <p id="idleVer" style="position:fixed;right:3vh;bottom:3.2vh;margin:0;z-index:9999;
   font-size:1.45vh;font-weight:500;letter-spacing:.11vh;opacity:.88;
   font-family:inherit;color:#fff;text-shadow:0 1px 4px #000;
-  padding:.45vh .8vh;background:rgba(0,0,0,.30);pointer-events:none">PIANO LouvorJA Palco · receiver v0.1.49</p>
+  padding:.45vh .8vh;background:rgba(0,0,0,.30);pointer-events:none">PIANO LouvorJA Palco · receiver v0.1.50</p>
 <audio id="audio" preload="auto"></audio>
 <script>
 function dlog(m1,m2,m3){try{console.log('[P]',m1,m2!==undefined?String(m2):'',m3!==undefined?String(m3):'')}catch(e){}}
@@ -571,11 +571,17 @@ function handle(m){
   // renderizar por cima (cross-bleed owner — caso real 28/08: random sobre
   // vídeo). Só 'video'/'audio'/'stop-all' passam; o sender retoma quando a
   // mídia encerra.
-  if((m.type==='projection'||m.type==='clock')&&!window.__mediaLock
-     &&(!v.paused&&v.style.display!=='none'||(a&&!a.paused)||window.__videoAudioActive)){
-    try{dlog('BLOCKED',m.type,'— mídia externa ativa')}catch(e){}
-    return;
+  if((m.type==='projection'||m.type==='clock')){
+    // heartbeat: mídia viva E sinal recente (<25s) → texto não passa.
+    // Sem sinal novo, o lock expira (sender morto/stuck não trava o culto).
+    const fresh=(Date.now()-(window.__mediaLastSeen||0))<25000;
+    const mediaActive=(!v.paused&&v.style.display!=='none')||(a&&!a.paused)||window.__videoAudioActive;
+    if(mediaActive&&fresh&&!window.__mediaLock){
+      try{dlog('BLOCKED',m.type,'— mídia externa ativa')}catch(e){}
+      return;
+    }
   }
+  if(m.type==='video'||m.type==='audio')window.__mediaLastSeen=Date.now();
   switch(m.type){
     case 'projection':
       hideIdle();
