@@ -3197,8 +3197,18 @@ function handle(m){
       break}
     case 'timer':{
       hideIdle();
+      hideCloudPair();
       const t=$('timer');
       if(m.action==='stop'){t.style.display='none';clearInterval(t._iv||0);$('text').style.display='';break}
+      // WT-5 cloud: text pronto (clock do web, timer/countdown) tem prioridade —
+      // o operador já formata; sem tick local (evita dessincronia e zero inicial).
+      if(typeof m.text==='string'&&m.text.trim()){
+        clearInterval(t._iv||0);
+        t.style.display='';$('text').style.display='none';
+        t.textContent=m.text+(m.label?'  ':'');
+        if(m.label){const sm=document.createElement('small');sm.textContent=m.label;t.appendChild(sm)}
+        break;
+      }
       t.style.display='';$('text').style.display='none';
       let rem=(m.duration||0)*1000; // countdown segundos
       const mode=m.mode||'countdown';
