@@ -338,6 +338,49 @@ function retry(){
   setStatus('reconectando em '+Math.round(wait/1000)+'s',true);
   setTimeout(connect,wait);
 }
+
+// ===== WT-5d: modo cloud — TV conecta no relay WS da API =====
+// Mesmo protocolo do receiver browser (browser/index.html): código de 6 chars
+// → GET /sessions/:code/token → WS /relay/:code?token&role=receiver.
+// Mensagens seguem para o MESMO handle() (projection/idle/timer/youare);
+// áudio/vídeo do relay não são tocados (mídia continua no caminho local).
+var PALCO_API_WS_DEFAULT='wss://api.louvorja.com.br/v1/palco';
+var cloudApi=(qs.get('api')||PALCO_API_WS_DEFAULT).replace(/\/$/,'');
+var cloudCode='';
+var cloudMode=false;
+var cloudTimer=null;
+
+function cloudConnect(code){
+  cloudMode=true;cloudCode=code;
+  dlog('cloudConnect',code,cloudApi);
+  var base=cloudApi.replace(/^ws/,'http');
+  setStatus('nuvem: buscando sessão '+code+'…');
+  fetch(base+'/sessions/'+code+'/token')
+    .then(function(r){if(!r.ok)throw Error('sessão não encontrada');return r.json()})
+    .then(function(j){cloudOpen(code,j.token)})
+    .catch(function(e){setStatus('nuvem: '+e.message,true);cloudRetry()});
+}
+function cloudOpen(code,token){
+  setStatus('nuvem: conectando…');
+  try{ws=new WebSocket(cloudApi+'/relay/'+code+'?token='+encodeURIComponent(token)+'&role=receiver')}
+  catch(e){cloudRetry();return}
+  ws.onopen=function(){tries=0;dlog('CLOUD WS OPEN',code);
+    setStatus('● nuvem '+code);
+    if(window.__hideSplash)window.__hideSplash();
+    try{localStorage.setItem('palcoCloudCode',code)}catch(e){}};
+  ws.onmessage=function(ev){try{handle(JSON.parse(ev.data))}catch(e){}};
+  ws.onclose=function(ev){
+    dlog('CLOUD WS CLOSE',ev&&ev.code);
+    stopMediaOnServerLoss();showIdle();
+    if(ev&&ev.code===4404){setStatus('sessão inválida — tecla vermelha p/ novo código',true);cloudMode=false;return}
+    cloudRetry()};
+  ws.onerror=function(){};
+}
+function cloudRetry(){
+  var wait=Math.min(1000*Math.pow(2,tries++),10000);
+  setStatus('nuvem: reconectando em '+Math.round(wait/1000)+'s',true);
+  cloudTimer=setTimeout(function(){if(cloudMode&&cloudCode)cloudConnect(cloudCode)},wait);
+}
 function showIdle(msg){
   $('idleMsg').textContent=msg;
   $('idle').classList.remove('hidden');
@@ -496,6 +539,15 @@ function closeIpEntry(){if(ipEntry){ipEntry.remove();ipEntry=null}}
 function submitIp(){
   var v=(ipEntry&&ipEntry._val)||'';
   if(!v)return;
+  // WT-5d: 6 alfanuméricos SEM ponto e SEM só-dígitos-curto = CÓDIGO CLOUD.
+  // A TV conecta no relay WS da API (role=receiver) em vez do IP do desktop —
+  // mesmo protocolo do receiver browser cloud (browser/index.html).
+  if(/^[A-Za-z0-9]{6}$/.test(v)){
+    tries=0;closeIpEntry();
+    try{if(ws)ws.close()}catch(e){}
+    cloudConnect(v.toUpperCase());
+    return;
+  }
   // Só dígitos (2-5) = PORTA: o sender é achado por scan com essa porta
   // (usuário não decora IP; nova TV na rede de igreja conecta fácil).
   if(/^\d{2,5}$/.test(v)&&!/\./.test(v)){
@@ -808,7 +860,14 @@ function handle(m){
 }
 
 
-connect();
+// WT-5d: boot — código cloud na query (?code=XXXXXX) ou salvo em localStorage
+// tem prioridade; sem código, segue o fluxo local (scan do sender na LAN).
+(function(){
+  var bootCode=(qs.get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!bootCode){try{bootCode=localStorage.getItem('palcoCloudCode')||''}catch(e){}}
+  if(bootCode&&bootCode.length===6){cloudConnect(bootCode);return}
+  connect();
+})();
 
 // ===== F3.3ad: auto-relaunch — o Palco volta ao foreground sozinho =====
 // Usado quando alguém sai do Palco sem querer (botão HOME/back) durante o
