@@ -526,7 +526,7 @@ function openIpEntry(){
   ipEntry.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.85);'+
     'display:flex;align-items:center;justify-content:center';
   ipEntry.innerHTML='<div style="text-align:center">'+
-    '<p style="font-size:2.6vh;opacity:.7;margin:0 0 2vh 0">Digite o IP — ou SÓ A PORTA (ex.: 7081) para achar o LouvorJA na rede</p>'+
+    '<p style="font-size:2.6vh;opacity:.7;margin:0 0 2vh 0">CÓDIGO (6 letras/números) · IP · IP:PORTA — ou SÓ A PORTA (ex.: 7081) para achar o LouvorJA na rede</p>'+
     '<p id="ipVal" style="font-size:6vh;font-weight:700;letter-spacing:.5vh;margin:0;'+
     'min-height:7vh;border-bottom:.3vh solid #FCCE02;padding:0 4vh"></p>'+
     '<p style="font-size:1.8vh;opacity:.5;margin:2vh 0 0 0">OK conectar · vermelha cancelar · backspace apaga</p></div>';
@@ -584,6 +584,9 @@ window.addEventListener('keydown',function(e){
       if(ipEntry._val.length<15){ipEntry._val+=String(k-96);renderIp()}}
     else if(k===46||k===190||k===110){                      // ponto
       if(ipEntry._val.length<15){ipEntry._val+='.';renderIp()}}
+    // WT-5d: letras A-Z — código cloud é 6 alfanuméricos. keyCode 65-90.
+    else if(k>=65&&k<=90){
+      if(ipEntry._val.length<15){ipEntry._val+=String.fromCharCode(k);renderIp()}}
     else if(k===403||k===27){closeIpEntry()}                // vermelha/ESC
     return;
   }
