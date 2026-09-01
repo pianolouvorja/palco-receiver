@@ -2666,7 +2666,10 @@ function cloudConnect(code){
 }
 function cloudOpen(code,token){
   setStatus('nuvem: conectando…');
-  try{ws=new WebSocket(cloudApi+'/relay/'+code+'?token='+encodeURIComponent(token)+'&role=receiver')}
+  var cid='';
+  try{cid=localStorage.getItem('palcoCloudCid')||''}catch(e){}
+  if(!cid){cid='tv-'+Math.random().toString(36).slice(2,10);try{localStorage.setItem('palcoCloudCid',cid)}catch(e){}}
+  try{ws=new WebSocket(cloudApi+'/relay/'+code+'?token='+encodeURIComponent(token)+'&role=receiver&cid='+encodeURIComponent(cid))}
   catch(e){cloudRetry();return}
   ws.onopen=function(){tries=0;dlog('CLOUD WS OPEN',code);
     setStatus('● nuvem '+code);
@@ -2677,6 +2680,9 @@ function cloudOpen(code,token){
     dlog('CLOUD WS CLOSE',ev&&ev.code);
     stopMediaOnServerLoss();showIdle();
     if(ev&&ev.code===4404){setStatus('sessão inválida — tecla vermelha p/ novo código',true);cloudMode=false;return}
+    // 4409 = join recusado (ex.: sessão recém-recriada) — reseta backoff pra
+    // tentar de novo rápido em vez de esperar 10s crescendo.
+    if(ev&&(ev.code===4409||ev.code===4400)){tries=0}
     cloudRetry()};
   ws.onerror=function(){};
 }
