@@ -3064,17 +3064,20 @@ function handle(m){
         (function(){
           var h=m.textAlign||'center', v=m.textVerticalAlign||'middle';
           var pad=(typeof m.padding==='number')?m.padding:120;
-          var padV=(pad/10.8)+'vh', padH=(pad/19.2)+'vw'; // px@1920 → vw/vh @1080
-          // reset sempre (mensagem nova pode trocar o alinhamento)
-          t.style.left='50%'; t.style.right='auto'; t.style.top='50%'; t.style.bottom='auto';
+          // Paridade popup: a CAIXA fica centralizada com largura total (o
+          // popup usa width:100% max-width) e só o TEXTO dentro alinha.
+          // Vertical sim reposiciona (popup usa align-items no palco).
+          t.style.left='50%'; t.style.right='auto';
+          t.style.top='50%'; t.style.bottom='auto';
+          t.style.maxWidth='92vw'; t.style.width='92vw';
           t.style.textAlign=h;
-          // translate X: caixa ancorada no centro/right/left
-          var tx = (h==='right') ? (t.style.left='auto', t.style.right=padH, '0')
-                 : (h==='left')  ? (t.style.left=padH, '0') : '-50%';
-          // translate Y: caixa ancorada no centro/top/bottom
-          var ty = (v==='bottom') ? (t.style.top='auto', t.style.bottom=padV, '0')
-                 : (v==='top')    ? (t.style.top=padV, '0') : '-50%';
-          t.style.transform='translate('+tx+','+ty+')';
+          var padV=(pad/10.8)+'vh';
+          // Rodapé (referência) fica em bottom:4vh (~7vh de altura): o texto
+          // NUNCA pode descer até ele — quando vAlign=bottom, para ACIMA.
+          var minBottom=12;
+          if(v==='bottom'){t.style.top='auto'; t.style.bottom=(Math.max(pad/10.8,minBottom))+'vh'; t.style.transform='translate(-50%,0)'}
+          else if(v==='top'){t.style.top=padV; t.style.transform='translate(-50%,0)'}
+          else{t.style.transform='translate(-50%,-50%)'}
         })();
         requestAnimationFrame(function(){
           var base=parseFloat(getComputedStyle(t).fontSize)||1;
