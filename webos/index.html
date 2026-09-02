@@ -3053,6 +3053,20 @@ function handle(m){
         // Auto-fit: reduz a fonte até o texto caber na altura útil (76vh) —
         // mesma passagem de linhas do popup (frase em 2 linhas lá, 2 aqui).
         t.style.transform='translate(-50%,-50%)';
+        // WT-5f bíblia: alinhamentos do palco (paridade popup). Só o operador
+        // manda; sem os campos, mantém o centro padrão (C4).
+        if(m.textAlign){t.style.textAlign=m.textAlign}
+        else{t.style.textAlign='center'}
+        if(m.textVerticalAlign||m.padding){
+          var va=m.textVerticalAlign||'middle';
+          var pad=(typeof m.padding==='number')?m.padding:120;
+          var topMap={top:pad, middle:'50%', bottom:''};
+          var botMap={top:'', middle:'50%', bottom:pad};
+          t.style.top=typeof topMap[va]==='number'?(topMap[va]/10.8)+'vh':topMap[va];
+          t.style.bottom=typeof botMap[va]==='number'?(botMap[va]/10.8)+'vh':botMap[va];
+          if(va!=='middle'){t.style.transform='translate(-50%,0)'}
+          else{t.style.transform='translate(-50%,-50%)'}
+        }
         requestAnimationFrame(function(){
           var base=parseFloat(getComputedStyle(t).fontSize)||1;
           var fit=base, i=0;
