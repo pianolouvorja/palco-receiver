@@ -14,15 +14,15 @@
   #bg[src=""]{opacity:0}
   #bgPalco{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover}
   #veil{position:fixed;inset:0;background:rgba(0,0,0,.45)}
-  #content{position:fixed;top:0;left:0;right:0;bottom:0;padding:6vh 8vw;
+  #content{position:fixed;top:0;left:0;right:0;bottom:0;padding:3vh 4vw;
     box-sizing:border-box}
   #text{position:absolute;top:50%;left:50%;
     /* Caixa encolhe até o texto como via cabo. display:table = shrink-to-fit
        compatível com Chromium antigo (webOS/Tizen) — fit-content em
        position:absolute colapsava no simulador (26/08). margin auto centra. */
-    display:table;max-width:86vw;max-height:72vh;transform:translate(-50%,-50%);
+    display:table;max-width:92vw;max-height:76vh;transform:translate(-50%,-50%);
     overflow-wrap:break-word;
-    text-align:center;font-size:3.65vw;font-weight:700;line-height:1.35;
+    text-align:center;font-size:3.65vw;font-weight:700;line-height:1.25;
     letter-spacing:.03em;text-transform:uppercase;
     text-shadow:0 2px 12px rgba(0,0,0,.8)}
   /* F3.3m: estilos dinâmicos da letra (sombra/caixinha) */
@@ -3050,6 +3050,16 @@ function handle(m){
           t.style.fontWeight=m.fontWeight;
         // WT-5 web: cor do texto do operador (paridade popup)
         if(m.textColor){t.style.color=m.textColor}
+        // Auto-fit: reduz a fonte até o texto caber na altura útil (76vh) —
+        // mesma passagem de linhas do popup (frase em 2 linhas lá, 2 aqui).
+        t.style.transform='translate(-50%,-50%)';
+        requestAnimationFrame(function(){
+          var base=parseFloat(getComputedStyle(t).fontSize)||1;
+          var fit=base, i=0;
+          while(i<20 && (t.offsetHeight>innerHeight*0.76) && fit>10){
+            fit*=0.94; t.style.fontSize=fit+'px'; i++;
+          }
+        });
       }
       // F3.3m: estilos da letra — sombra (intensidade) + caixinha (borda)
       {const t=$('text');
