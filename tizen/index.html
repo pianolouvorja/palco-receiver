@@ -3048,6 +3048,8 @@ function handle(m){
           t.style.fontSize=(m.fontSize/19.2)+'vw'; // px@1920 → vw: paridade com cqw dos popups (era 10.8 — fonte ~78% maior)
         if(typeof m.fontWeight==='number')
           t.style.fontWeight=m.fontWeight;
+        // WT-5 web: cor do texto do operador (paridade popup)
+        if(m.textColor){t.style.color=m.textColor}
       }
       // F3.3m: estilos da letra — sombra (intensidade) + caixinha (borda)
       {const t=$('text');
