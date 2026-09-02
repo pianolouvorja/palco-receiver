@@ -3027,11 +3027,15 @@ function handle(m){
         t.style.display='none';$('text').style.display='';}}
       const bgEl=$('bg');
       bgEl.onerror=()=>{bgEl.onerror=null;bgEl.src='bg-fallback.png'};
-      if(m.background){bgEl.src=proxyUrl(m.background)}
+      if(m.background){bgEl.src=proxyUrl(m.background);bgEl.style.opacity='';document.body.style.background=''}
       // Sem bg na mensagem: usa o BG configurado no app (bgPalco — enviado
       // ao ligar o palco). Só se NÃO houver bg configurado cai no fallback
       // fixo. Vale pra qualquer módulo (26/08 Rafael).
-      else if(bgPalco){bgEl.src=proxyUrl(bgPalco)}
+      // WT-5 web: backgroundColor do palco (paridade popup) também conta
+      // como bg válido — pinta o body e esconde o img (hino sem capa e sem
+      // bg custom usa a cor do palco; fallback é só MP3 sem nada, 01/09).
+      else if(m.backgroundColor){bgEl.removeAttribute('src');document.body.style.background=m.backgroundColor}
+      else if(bgPalco){bgEl.src=proxyUrl(bgPalco);bgEl.style.opacity='';document.body.style.background=''}
       else{bgEl.src='bg-fallback.png'}
       // Slide/PDF/PPT (text vazio) é mídia visual pura: sem véu de leitura,
       // preserva a tonalidade original do canvas do operador.
@@ -3041,7 +3045,7 @@ function handle(m){
       // F3.3o: fontSize/fontWeight dinâmicos (settings do operador).
       {const t=$('text');
         if(typeof m.fontSize==='number')
-          t.style.fontSize=(m.fontSize/10.8)+'vw'; // px@1080p -> vw (LARGURA): paridade com cqw do cabo
+          t.style.fontSize=(m.fontSize/19.2)+'vw'; // px@1920 → vw: paridade com cqw dos popups (era 10.8 — fonte ~78% maior)
         if(typeof m.fontWeight==='number')
           t.style.fontWeight=m.fontWeight;
       }
