@@ -2490,6 +2490,10 @@ function proxyUrl(original){
   // Sender/popup legado pode mandar barra codificada (%2F) — decodifica
   // caminho antes de qualquer comparação/use (404 silencioso caso contrário).
   try{ original=decodeURIComponent(original) }catch(e){}
+  // WT-5f cloud: no modo relay a TV carrega DIRETO da rede do operador web
+  // (a URL vem absoluta, ex. http://192.168.x.x:5173/...). O proxy :7080 é
+  // do sender APK — se não está rodando, 502 e bg nunca carrega.
+  if(cloudMode)return original;
   // Qualquer porta do MESMO sender é local: 7080 (Principal), 7082 (TV 2),
   // 7084... Antes só aceitava :7080; bg vindo de slot :7082 era proxyado
   // de volta e falhava → receiver caía no bg-12 (caso real 26/08).
