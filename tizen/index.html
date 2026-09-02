@@ -3102,6 +3102,11 @@ function handle(m){
       }
       // F3.3m: footer com referência destacada + versão
       {const f=$('footer');
+        // WT-5f: footer segue o alinhamento do palco (paridade popup — a
+        // referência fica dentro do conteúdo lá, alinhada com o texto).
+        // padding 4vw = mesma borda da caixa de texto (92vw centrada).
+        if(m.textAlign){f.style.textAlign=m.textAlign;f.style.padding='0 4vw';f.style.boxSizing='border-box'}
+        else{f.style.textAlign='center';f.style.padding='0'}
         if(m.footerRef){
           f.innerHTML=`<span class="ref" style="--ref-color:${m.footerColor||'#FCCE02'};--ref-weight:${m.footerWeight||600}">${m.footerRef}</span>`+
             (m.footerVersion?`<span class="ver">${m.footerVersion}</span>`:'');
