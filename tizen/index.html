@@ -3066,11 +3066,14 @@ function handle(m){
           var pad=(typeof m.padding==='number')?m.padding:120;
           // Paridade popup: a CAIXA fica centralizada com largura total (o
           // popup usa width:100% max-width) e só o TEXTO dentro alinha.
-          // Vertical sim reposiciona (popup usa align-items no palco).
+          // reset sempre (mensagem nova pode trocar o alinhamento)
           t.style.left='50%'; t.style.right='auto';
           t.style.top='50%'; t.style.bottom='auto';
           t.style.maxWidth='92vw'; t.style.width='92vw';
           t.style.textAlign=h;
+          // WT-5f: capitalização do versículo (paridade popup)
+          if(m.textTransform){t.style.textTransform=m.textTransform}
+          else{t.style.textTransform='none'}
           var padV=(pad/10.8)+'vh';
           // Rodapé (referência) fica em bottom:4vh (~7vh de altura): o texto
           // NUNCA pode descer até ele — quando vAlign=bottom, para ACIMA.
