@@ -32,8 +32,9 @@
      justo ao texto (2cqw ≈ 3.8vh lateral, 2vh vertical). */
   #text.box-on{background:rgba(0,0,0,var(--box-bg,.45));
     /* Player: radius folha clamp(14px,2.4vmin,32px) 0, borda 0.2vmin e
-       sombra suave. Padding mínimo — caixa abraça o texto (vmin). */
-    padding:1.6vmin 1.8vmin;
+       sombra suave. Padding apertado — caixa abraça o texto (vmin);
+       WT-5f: menor ainda (Rafael 02/09) p/ versículo curto caber em linha. */
+    padding:.9vmin 1.2vmin;
     border-radius:2.4vmin 0 2.4vmin 0;
     border:var(--box-border,.2vmin solid rgba(255,255,255,.25));
     box-shadow:0 10px 30px rgba(0,0,0,.4)}
@@ -3110,6 +3111,10 @@ function handle(m){
         // padding 4vw = mesma borda da caixa de texto (92vw centrada).
         if(m.textAlign){f.style.textAlign=m.textAlign;f.style.padding='0 4vw';f.style.boxSizing='border-box'}
         else{f.style.textAlign='center';f.style.padding='0'}
+        // WT-5f: com referência, sobe pra FORA da área da caixinha de texto
+        // (vAlign=bottom desce o texto até 12vh; footer fica logo abaixo,
+        // com gap, longe do label de versão no canto).
+        f.style.bottom=(m.footerRef?'8vh':'4vh');
         if(m.footerRef){
           f.innerHTML=`<span class="ref" style="--ref-color:${m.footerColor||'#FCCE02'};--ref-weight:${m.footerWeight||600}">${m.footerRef}</span>`+
             (m.footerVersion?`<span class="ver">${m.footerVersion}</span>`:'');
@@ -3117,6 +3122,9 @@ function handle(m){
           f.textContent=m.footer||'';
         }
       }
+      // Label de versão some durante projection com referência (colidia no
+      // canto inferior direito — print 02/09 Rafael).
+      {const iv=$('idleVer');if(iv)iv.style.display=m.footerRef?'none':''}
       break;
     case 'bgPalco':
       // BG permanente do palco (idle) — personalização, não da música
