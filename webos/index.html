@@ -3073,8 +3073,16 @@ function handle(m){
           // reset sempre (mensagem nova pode trocar o alinhamento)
           t.style.left='50%'; t.style.right='auto';
           t.style.top='50%'; t.style.bottom='auto';
-          t.style.maxWidth='92vw'; t.style.width='92vw';
+          // Paridade popup: stage tem padding 6vmin de cada lado.
+          // 92vw era ~22px menor em 1920 e mudava a quebra (TV=4, popup=3).
+          t.style.maxWidth='calc(100vw - 12vmin)';
+          t.style.width='calc(100vw - 12vmin)';
           t.style.textAlign=h;
+          // Bíblia no popup: line-height 1.45 e sem letter-spacing. O CSS
+          // base do receiver (.03em/1.25) fazia a mesma passagem quebrar
+          // diferente. Só aplica quando há referência bíblica.
+          if(m.footerRef){t.style.lineHeight='1.45';t.style.letterSpacing='0'}
+          else{t.style.lineHeight='';t.style.letterSpacing=''}
           // WT-5f: capitalização do versículo (paridade popup)
           if(m.textTransform){t.style.textTransform=m.textTransform}
           else{t.style.textTransform='none'}
@@ -3087,9 +3095,13 @@ function handle(m){
           else{t.style.transform='translate(-50%,-50%)'}
         })();
         requestAnimationFrame(function(){
+          // WT-5f paridade popup: auto-fit mede scrollHeight vs área útil
+          // (86% do palco) e reduz até caber — MESMO algoritmo do popup
+          // (applyFit/fitScale), não só altura total em 76vh.
           var base=parseFloat(getComputedStyle(t).fontSize)||1;
+          var maxH=innerHeight*0.86;
           var fit=base, i=0;
-          while(i<20 && (t.offsetHeight>innerHeight*0.76) && fit>10){
+          while(i<30 && (t.scrollHeight>maxH) && fit>10){
             fit*=0.94; t.style.fontSize=fit+'px'; i++;
           }
           // WT-5f paridade popup: a referência fica ANCORADA na caixinha do
