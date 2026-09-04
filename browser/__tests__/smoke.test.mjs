@@ -7,7 +7,15 @@ const require = createRequire('/home/rafaelejosi/piano-api/package.json');
 const WebSocket = require('ws');
 const root = new URL('../', import.meta.url);
 const html = await readFile(new URL('index.html', root), 'utf8');
+const manifest = JSON.parse(await readFile(new URL('manifest.webmanifest', root), 'utf8'));
+const serviceWorker = await readFile(new URL('sw.js', root), 'utf8');
 
+assert.equal(manifest.display, 'fullscreen');
+assert.equal(manifest.icons[0].src, './icon.svg');
+assert.match(html, /rel="manifest"/);
+assert.match(html, /serviceWorker\.register/);
+assert.match(html, /louvorja\.palco\.code/);
+assert.match(serviceWorker, /addEventListener\('fetch'/);
 assert.match(html, /id="code"/);
 assert.match(html, /function handle\(m\)/);
 assert.match(html, /case "projection"/);
