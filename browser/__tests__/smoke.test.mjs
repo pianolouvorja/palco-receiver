@@ -11,7 +11,11 @@ const manifest = JSON.parse(await readFile(new URL('manifest.webmanifest', root)
 const serviceWorker = await readFile(new URL('sw.js', root), 'utf8');
 
 assert.equal(manifest.display, 'fullscreen');
-assert.equal(manifest.icons[0].src, './icon.svg');
+// Instalabilidade Chrome: precisa PNG 192+512 (SVG sozinho não qualifica).
+assert.deepEqual(
+  manifest.icons.filter((i) => i.type === 'image/png').map((i) => i.sizes).sort(),
+  ['192x192', '512x512'],
+);
 assert.match(html, /rel="manifest"/);
 assert.match(html, /serviceWorker\.register/);
 assert.match(html, /params\.get\('code'\)/);
