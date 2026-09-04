@@ -14,6 +14,7 @@ assert.equal(manifest.display, 'fullscreen');
 assert.equal(manifest.icons[0].src, './icon.svg');
 assert.match(html, /rel="manifest"/);
 assert.match(html, /serviceWorker\.register/);
+assert.match(html, /params\.get\('code'\)/);
 assert.match(html, /louvorja\.palco\.code/);
 assert.match(serviceWorker, /addEventListener\('fetch'/);
 assert.match(html, /id="code"/);
