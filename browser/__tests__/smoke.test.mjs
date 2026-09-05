@@ -18,6 +18,8 @@ assert.deepEqual(
 );
 assert.match(html, /rel="manifest"/);
 assert.match(html, /serviceWorker\.register/);
+assert.match(html, /getScreenDetails/);
+assert.match(html, /logo-piano-louvorja\.png/);
 assert.match(html, /params\.get\('code'\)/);
 assert.match(html, /louvorja\.palco\.code/);
 assert.match(serviceWorker, /addEventListener\('fetch'/);
